@@ -7,7 +7,6 @@ import { StatBannerStrip } from './components/StatBannerStrip';
 import type { DashboardTab } from './components/UnifiedDashboard';
 import { CaseHistoryPanel } from './components/CaseHistoryPanel';
 import { AnalysisResultsPage } from './components/AnalysisResultsPage';
-import { SignInPage } from './components/SignInPage';
 import { ProfilePage } from './components/ProfilePage';
 import { Footer } from './components/Footer';
 import type {
@@ -23,25 +22,29 @@ import type {
   UserProfile,
 } from './types';
 
-type AppPage = 'home' | 'case-history' | 'results' | 'profile' | 'sign-in';
+type AppPage = 'home' | 'case-history' | 'results' | 'profile';
 
-const DEFAULT_USER: UserProfile = {
-  name: 'Dr. Rahul',
-  title: 'Principal Clinical Oncologist & Molecular Pathologist',
-  email: 'rahul@oncology.mskcc.org',
-  institution: 'Memorial Sloan Kettering Cancer Center',
-  department: 'Genitourinary Oncology & Precision Therapeutics',
-  licenseNumber: 'MD-NY-849204',
+export const ANONYMOUS_GUEST_USER: UserProfile = {
+  name: 'Guest Investigator',
+  title: 'Public Showcase Clinician & Researcher',
+  email: 'guest@oncobot.app',
+  institution: 'OncoBot Demonstration Workstation',
+  department: 'Precision Oncology & Multimodal Therapeutics',
+  licenseNumber: 'GUEST-PUBLIC-ACCESS',
   role: 'MD',
-  casesReviewedCount: 24,
-  lastLogin: 'Today at 09:42 AM',
+  casesReviewedCount: 0,
+  lastLogin: 'Active Guest Session',
 };
 
 const getPageFromPath = (): AppPage => {
   if (window.location.pathname === '/case-history') return 'case-history';
   if (window.location.pathname === '/results') return 'results';
   if (window.location.pathname === '/profile') return 'profile';
-  if (window.location.pathname === '/sign-in') return 'sign-in';
+  // Redirect legacy /sign-in immediately to home
+  if (window.location.pathname === '/sign-in') {
+    window.history.replaceState({}, '', '/');
+    return 'home';
+  }
   return 'home';
 };
 
@@ -90,28 +93,23 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
     try {
       const saved = window.localStorage.getItem('oncobot-user');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.name && parsed.name.includes('Chavan')) {
-          return DEFAULT_USER;
+        if (parsed.name) {
+          return parsed;
         }
-        return parsed;
       }
-      return DEFAULT_USER;
+      return ANONYMOUS_GUEST_USER;
     } catch {
-      return DEFAULT_USER;
+      return ANONYMOUS_GUEST_USER;
     }
   });
 
   useEffect(() => {
-    if (currentUser) {
-      window.localStorage.setItem('oncobot-user', JSON.stringify(currentUser));
-    } else {
-      window.localStorage.removeItem('oncobot-user');
-    }
+    window.localStorage.setItem('oncobot-user', JSON.stringify(currentUser));
   }, [currentUser]);
 
   const navigateTo = useCallback((page: AppPage) => {
@@ -122,8 +120,6 @@ export const App: React.FC = () => {
         ? '/results'
         : page === 'profile'
         ? '/profile'
-        : page === 'sign-in'
-        ? '/sign-in'
         : '/';
     window.history.pushState({}, '', path);
     setCurrentPage(page);
@@ -387,13 +383,11 @@ export const App: React.FC = () => {
           isCaseHistoryPage={currentPage === 'case-history'}
           isResultsPage={currentPage === 'results'}
           isProfilePage={currentPage === 'profile'}
-          isSignInPage={currentPage === 'sign-in'}
           user={currentUser}
           onOpenCaseHistory={() => navigateTo('case-history')}
           onNavigateHome={() => navigateTo('home')}
           onOpenResults={() => navigateTo('results')}
           onOpenProfile={() => navigateTo('profile')}
-          onOpenSignIn={() => navigateTo('sign-in')}
         />
 
         {currentPage === 'case-history' ? (
@@ -403,33 +397,18 @@ export const App: React.FC = () => {
             onRerun={handleRerunCase}
           />
         ) : currentPage === 'profile' ? (
-          currentUser ? (
-            <ProfilePage
-              user={currentUser}
-              caseHistoryCount={caseHistory.length}
-              onSignOut={() => {
-                setCurrentUser(null);
-                navigateTo('sign-in');
-              }}
-              onBackToConsole={() => navigateTo('home')}
-              onOpenCaseHistory={() => navigateTo('case-history')}
-            />
-          ) : (
-            <SignInPage
-              onSignIn={(user) => {
-                setCurrentUser(user);
-                navigateTo('profile');
-              }}
-              onBack={() => navigateTo('home')}
-            />
-          )
-        ) : currentPage === 'sign-in' ? (
-          <SignInPage
-            onSignIn={(user) => {
-              setCurrentUser(user);
+          <ProfilePage
+            user={currentUser}
+            caseHistoryCount={caseHistory.length}
+            onResetSession={() => {
+              window.localStorage.removeItem('oncobot-case-history');
+              window.localStorage.removeItem('oncobot-user');
+              setCaseHistory([]);
+              setCurrentUser(ANONYMOUS_GUEST_USER);
               navigateTo('home');
             }}
-            onBack={() => navigateTo('home')}
+            onBackToConsole={() => navigateTo('home')}
+            onOpenCaseHistory={() => navigateTo('case-history')}
           />
         ) : currentPage === 'results' ? (
           hasCompletedAnalysis && inferenceResult ? (

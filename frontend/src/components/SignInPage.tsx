@@ -177,9 +177,13 @@ export const SignInPage: React.FC<SignInPageProps> = ({ onSignIn, onBack }) => {
                   />
                   <span>Remember this clinical device</span>
                 </label>
-                <a href="#reset" onClick={(e) => e.preventDefault()} className="font-sans text-[12px] font-medium text-deep-teal hover:underline">
+                <button
+                  type="button"
+                  onClick={() => alert("Local Clinical Workstation: Password resets must be requested through your site pathology administrator. Alternatively, please use 'Quick Demo Access'.")}
+                  className="font-sans text-[12px] font-medium text-deep-teal hover:underline bg-transparent border-none p-0 cursor-pointer"
+                >
                   Forgot password?
-                </a>
+                </button>
               </div>
 
               {/* Submit Buttons */}

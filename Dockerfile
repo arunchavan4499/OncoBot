@@ -1,5 +1,5 @@
 # Stage 1: Build the React frontend
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
 # Install dependencies first for Docker caching
@@ -16,7 +16,7 @@ WORKDIR /app
 
 # Install system dependencies (OpenSlide, OpenCV requirements, etc.)
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     openslide-tools \
     awscli \

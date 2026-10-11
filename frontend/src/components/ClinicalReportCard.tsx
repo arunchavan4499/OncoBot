@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Copy, Download, RefreshCw, Check, FileText, FileDown } from 'lucide-react';
-import type { ClinicalReport } from '../types';
+import type { ClinicalReport, HeatmapData } from '../types';
 import { exportClinicalReportPdf } from '../utils/reportPdfGenerator';
+import { generateWsiHeatmapDataUrl } from '../utils/wsiHeatmapExporter';
 
 interface ClinicalReportCardProps {
   report: ClinicalReport | null;
   patientId: string;
   onRegenerate: () => void;
   isLoading: boolean;
+  heatmap?: HeatmapData | null;
 }
 
 export const ClinicalReportCard: React.FC<ClinicalReportCardProps> = ({
@@ -15,9 +17,11 @@ export const ClinicalReportCard: React.FC<ClinicalReportCardProps> = ({
   patientId,
   onRegenerate,
   isLoading,
+  heatmap = null,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+  const [pdfStatusMessage, setPdfStatusMessage] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'formatted' | 'raw'>('formatted');
 
   const fallbackReport = `# MULTIMODAL CLINICAL DECISION SUPPORT REPORT
@@ -88,18 +92,28 @@ Examination of gigapixel WSI tile attention maps indicates high spatial co-local
 
   const handleExportPdf = async () => {
     setIsPdfGenerating(true);
+    setPdfStatusMessage('Generating high-resolution WSI heatmap and synthesizing PDF...');
     try {
+      let heatmapImageUrl: string | null = null;
+      try {
+        heatmapImageUrl = await generateWsiHeatmapDataUrl(heatmap, patientId);
+      } catch (wsiErr) {
+        console.warn('[ClinicalReportCard] Failed to generate WSI heatmap composite, continuing with text-only PDF:', wsiErr);
+      }
+
       await exportClinicalReportPdf({
         patientId,
         reportText,
         modelTag,
         riskScore: report?.risk_score,
+        heatmapImageUrl,
       });
     } catch (err) {
       console.error('Failed to generate PDF:', err);
       alert('Failed to generate PDF. Please try again.');
     } finally {
       setIsPdfGenerating(false);
+      setPdfStatusMessage(null);
     }
   };
 
@@ -258,12 +272,12 @@ Examination of gigapixel WSI tile attention maps indicates high spatial co-local
             onClick={handleExportPdf}
             disabled={isPdfGenerating}
             className="bg-deep-teal hover:bg-forest-floor text-white font-sans text-[12px] font-semibold px-3.5 py-1.5 rounded-full border-none flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:shadow disabled:opacity-60"
-            title="Download Official Clinical PDF with Medical Letterhead, Icons & Badges"
+            title="Download Official Clinical PDF with Medical Letterhead, WSI Heatmap & Badges"
           >
             {isPdfGenerating ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Rendering PDF...</span>
+                <span>Synthesizing PDF...</span>
               </>
             ) : (
               <>
@@ -274,6 +288,13 @@ Examination of gigapixel WSI tile attention maps indicates high spatial co-local
           </button>
         </div>
       </div>
+
+      {pdfStatusMessage && (
+        <div className="mb-3 px-3.5 py-2 bg-sea-foam/90 border border-deep-teal/20 rounded-xl text-deep-teal font-mono text-[11px] font-semibold flex items-center gap-2 animate-pulse shadow-xs">
+          <span className="w-2 h-2 rounded-full bg-deep-teal animate-ping" />
+          <span>{pdfStatusMessage}</span>
+        </div>
+      )}
 
       {/* Model Spec Ribbon & View Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 bg-paper-white border border-charcoal-navy/10 px-4 py-2 rounded-xl">

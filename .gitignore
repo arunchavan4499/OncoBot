@@ -38,6 +38,7 @@ Datasets/
 *.pt
 *.pth
 *.h5
+!test_patients_for_ui/**
 
 # Claude / Agent logs (We will push the architecture state, but not the execution logs)
 .claude/state/execution/
@@ -59,3 +60,18 @@ TEAMMATE_HANDOVER.md
 # User uploaded temporary data
 uploads/*
 !uploads/.gitkeep
+INTERVIEW_PREP_GUIDE.md
+debug_export.py
+generate_demo_svs.py
+apply_placeholders.py
+apply_template*.py
+expand_paper*.py
+fix_*.py
+read_*.py
+test_sections.py
+update_refs.py
+generate_paper.py
+Amplyt_IEEE_Paper.docx
+OncoBot_IEEE_Final.docx
+OncoBot_IEEE_Formatted.docx
+OncoBot_IEEE_Paper.docx

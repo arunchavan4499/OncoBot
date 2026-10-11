@@ -197,6 +197,7 @@ export const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
                 patientId={patientId}
                 onRegenerate={onRegenerateReport}
                 isLoading={isReportLoading}
+                heatmap={heatmap}
               />
             )}
           </div>
@@ -232,6 +233,7 @@ export const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
             patientId={patientId}
             onRegenerate={onRegenerateReport}
             isLoading={isReportLoading}
+            heatmap={heatmap}
           />
         </div>
       )}

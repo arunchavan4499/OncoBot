@@ -7,8 +7,8 @@ import {
   Cpu,
   Dna,
   History,
-  LogOut,
   Mail,
+  RotateCcw,
   ShieldCheck,
   Stethoscope,
   User,
@@ -18,7 +18,8 @@ import type { UserProfile } from '../types';
 interface ProfilePageProps {
   user: UserProfile;
   caseHistoryCount: number;
-  onSignOut: () => void;
+  onResetSession?: () => void;
+  onSignOut?: () => void;
   onBackToConsole: () => void;
   onOpenCaseHistory: () => void;
 }
@@ -26,10 +27,12 @@ interface ProfilePageProps {
 export const ProfilePage: React.FC<ProfilePageProps> = ({
   user,
   caseHistoryCount,
+  onResetSession,
   onSignOut,
   onBackToConsole,
   onOpenCaseHistory,
 }) => {
+  const handleReset = onResetSession || onSignOut;
   const initials = user.name
     .split(' ')
     .map((part) => part[0])
@@ -72,12 +75,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </button>
             <button
               type="button"
-              onClick={onSignOut}
-              className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50/70 px-3.5 py-2 font-sans text-[12px] font-semibold text-red-700 hover:bg-red-100/80 transition-colors cursor-pointer"
-              title="Sign Out of Session"
+              onClick={handleReset}
+              className="flex items-center gap-1.5 rounded-full border border-charcoal-navy/20 bg-paper-white px-3.5 py-2 font-sans text-[12px] font-semibold text-charcoal-navy hover:border-red-300 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+              title="Reset Session and Clear History"
             >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Reset Session / Clear History</span>
             </button>
           </div>
         </div>
@@ -94,7 +97,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 <div>
                   <div className="inline-flex items-center gap-1 rounded-full bg-sea-foam px-2.5 py-0.5 font-mono text-[10px] font-semibold text-deep-teal mb-1">
                     <CheckCircle2 className="h-3 w-3" />
-                    Verified Clinician
+                    {user.licenseNumber === 'GUEST-PUBLIC-ACCESS' ? 'Public Showcase Clinician' : 'Verified Clinician'}
                   </div>
                   <h2 className="font-serif text-[22px] font-medium text-charcoal-navy">
                     {user.name}
@@ -127,11 +130,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               <div className="mt-5 pt-4 border-t border-charcoal-navy/10">
                 <button
                   type="button"
-                  onClick={onSignOut}
+                  onClick={handleReset}
                   className="w-full flex items-center justify-center gap-2 rounded-xl border border-charcoal-navy/15 bg-canvas px-4 py-2 font-sans text-[12px] font-semibold text-charcoal-navy/80 hover:border-red-300 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
                 >
-                  <LogOut className="h-3.5 w-3.5" />
-                  End Session &amp; Sign Out
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Reset Session &amp; Clear History
                 </button>
               </div>
             </div>
@@ -140,10 +143,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             <div className="rounded-2xl border border-deep-teal/20 bg-sea-foam/40 p-4">
               <div className="flex items-center gap-2 text-deep-teal font-mono text-[11px] font-bold mb-1">
                 <ShieldCheck className="h-4 w-4" />
-                SECURITY &amp; COMPLIANCE
+                PUBLIC SHOWCASE &amp; PRIVACY
               </div>
               <p className="font-sans text-[12px] text-charcoal-navy/70 leading-relaxed">
-                Workstation session encrypted with RSA-4096 and HIPAA compliant. Session logs are audited for research reproducibility.
+                Public Showcase mode active. All multimodal inference runs and clinical report exports are rendered client-side and ephemeral. Resetting your session clears cached history and resets demo parameters.
               </p>
             </div>
           </div>

@@ -1,506 +1,462 @@
 # OncoBot 🧬🔬
-### Pathway-Aware Multimodal Transformer (PAMT) for Cancer Survival Prognostication & Clinical Decision Support
+### Pathway-Aware Multimodal Transformer (PAMT) for Bladder Cancer Survival Prediction & Explainable Clinical Decision Support
 
-[![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Python Version](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB.svg?logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-8.3-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Serverless%20Router-FFD21E.svg?logo=huggingface&logoColor=black)](https://huggingface.co/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Vite](https://img.shields.io/badge/Vite-6.x%20%7C%208.x-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Multi--Stage-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Vision Backbone](https://img.shields.io/badge/Vision%20Encoder-DINO%20ViT--S%2F16-blueviolet.svg)](https://github.com/facebookresearch/dino)
+[![WSI Engine](https://img.shields.io/badge/Pathology-OpenSlide%203.4%2B-green.svg)](https://openslide.org/)
 [![Harrell's C-Index](https://img.shields.io/badge/Validation%20C--Index-0.784-success.svg)](#-clinical-validation--benchmark-results)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ---
 
 ## 📑 Table of Contents
-- [Executive Overview](#-executive-overview)
-- [The Clinical Problem](#-the-clinical-problem)
-- [System Architecture](#-system-architecture)
-- [What We Used and Why (Component-by-Component Rationale)](#-what-we-used-and-why-component-by-component-rationale)
-  - [1. Pathology Branch (Vision & Spatial Morphology)](#1-pathology-branch-vision--spatial-morphology)
-  - [2. Genomics Branch (Biology & Transcriptomics)](#2-genomics-branch-biology--transcriptomics)
-  - [3. Cross-Modal Attention Fusion](#3-cross-modal-attention-fusion)
-  - [4. Prognostic Survival Head (Cox-PH)](#4-prognostic-survival-head-cox-ph)
-  - [5. Automated LLM Clinical Reporting](#5-automated-llm-clinical-reporting)
-  - [6. High-DPI Client-Side PDF Export](#6-high-dpi-client-side-pdf-export)
-  - [7. Clinical Intelligence Dashboard](#7-clinical-intelligence-dashboard)
-- [Mathematical Formulations](#-mathematical-formulations)
-- [Interactive Clinical Features](#-interactive-clinical-features)
-- [Repository & File Organization](#-repository--file-organization)
-- [Installation & Quickstart Guide](#-installation--quickstart-guide)
-- [Configuration & Environment Variables](#-configuration--environment-variables)
-- [REST API Specification](#-rest-api-specification)
-- [Clinical Validation & Benchmark Results](#-clinical-validation--benchmark-results)
-- [Medical Disclaimer & Ethical Use](#-medical-disclaimer--ethical-use)
-- [Citations & References](#-citations--references)
+1. [Executive Summary & The Clinical Problem](#-executive-summary--the-clinical-problem)
+2. [Core Innovation: Pathway-Aware Multimodal Transformer (PAMT)](#-core-innovation-pathway-aware-multimodal-transformer-pamt)
+3. [System Architecture & Dataflow](#-system-architecture--dataflow)
+4. [The Engineering Battle Log (Obstacles Overcome & Production Solutions)](#-the-engineering-battle-log-obstacles-overcome--production-solutions)
+   - [4.1 OpenSlide 40GB RAM Allocation Fix (C-Level Tile Caching Leak)](#41-openslide-40gb-ram-allocation-fix-c-level-tile-caching-leak)
+   - [4.2 Controlled Multiprocessing: Slashing Tiling Time from 2m to 15s](#42-controlled-multiprocessing-slashing-tiling-time-from-2m-to-15s)
+   - [4.3 PyTorch BatchNorm 1D Single-Batch Evaluation Failure](#43-pytorch-batchnorm-1d-single-batch-evaluation-failure)
+   - [4.4 Distributed MLOps: Cloud Feature Extraction & Cohort Pre-Computation](#44-distributed-mlops-cloud-feature-extraction--cohort-pre-computation)
+   - [4.5 Full-Stack & Container Engineering (Docker Multi-Stage, Node 20, Debian Trixie)](#45-full-stack--container-engineering-docker-multi-stage-node-20-debian-trixie)
+5. [Known Limitations & Open ML Challenges (Machine Learning POV)](#-known-limitations--open-ml-challenges-machine-learning-pov)
+   - [5.1 Gene Nomenclature & Alignment Discrepancies](#51-gene-nomenclature--alignment-discrepancies)
+   - [5.2 Histopathology Stain Variations & Batch Effects](#52-histopathology-stain-variations--batch-effects)
+   - [5.3 Variable Patch Budgets & Dynamic Key-Padding Masks](#53-variable-patch-budgets--dynamic-key-padding-masks)
+   - [5.4 Out-of-Distribution (OOD) Organ Calibration](#54-out-of-distribution-ood-organ-calibration)
+   - [5.5 In-Flight Latency & The Enterprise Asynchronous Worker Roadmap](#55-in-flight-latency--the-enterprise-asynchronous-worker-roadmap)
+6. [Local Showcase Setup & Execution Guide (Step-by-Step)](#-local-showcase-setup--execution-guide-step-by-step)
+   - [Option A: Local Development with Conda & Node.js](#option-a-local-development-with-conda--nodejs)
+   - [Option B: Single-Command Production Docker Deployment](#option-b-single-command-production-docker-deployment)
+   - [Testing with the 5 Pre-Packaged Demo Patients](#testing-with-the-5-pre-packaged-demo-patients)
+7. [Mathematical Formulations](#-mathematical-formulations)
+8. [Clinical Validation & Benchmark Results](#-clinical-validation--benchmark-results)
+9. [REST API Specification](#-rest-api-specification)
+10. [Ethical Use, Medical Disclaimer & Citations](#-ethical-use-medical-disclaimer--citations)
 
 ---
 
-## 🩺 Executive Overview
+## 🩺 Executive Summary & The Clinical Problem
 
-**OncoBot** is a production-grade multimodal clinical AI platform engineered to bridge the translational gap between **Gigapixel Whole-Slide Histopathology (WSI)** and **Bulk Transcriptomics (RNA-Seq)** for patients with **Bladder Urothelial Carcinoma (TCGA-BLCA)**.
+**Bladder Urothelial Carcinoma (TCGA-BLCA)** is characterized by extreme molecular heterogeneity, frequent postoperative recurrence (50–70% in non-muscle invasive stages), and high mortality once tumor cells invade the muscularis propria. 
 
-Traditional computational oncology models either evaluate a single modality in isolation or perform naive late-stage concatenation (flattening features into a generic 1D array), completely destroying spatial tissue architecture and biological pathway hierarchies.
+### The Translational Disconnect
+In modern clinical oncology, therapeutic decisions are fragmented across two siloed disciplines:
+- **Surgical Pathology:** Pathologists analyze gigapixel Hematoxylin and Eosin (H&E) Whole-Slide Images (WSIs) under optical magnification. While critical for evaluating tumor grade, depth of invasion (stage T1 vs. T2+), and stromal desmoplasia, subjective inspection is prone to inter-observer variability and cannot reveal latent somatic alterations.
+- **Molecular Oncology:** Molecular biologists conduct high-throughput bulk RNA-Seq transcriptomics to profile somatic mutations and transcriptional pathways (*TP53*, *RB1*, *FGFR3*, *PIK3CA*). However, bulk RNA sequencing is spatially agnostic—homogenizing tumor, stroma, and immune infiltrates into a single numeric vector, completely obscuring histomorphological microenvironments.
 
-OncoBot introduces a **Pathway-Aware Multimodal Transformer (PAMT)**:
-1. **Genotype-to-Phenotype Cross-Attention:** Uses 320 canonical cancer pathways from MSigDB KEGG as cross-attention *queries* to inspect thousands of self-supervised *visual patch keys/values* extracted from gigapixel biopsy slides.
-2. **Proportional Hazards Survival Modeling:** Predicts continuous patient risk scores $\hat{h}(x)$ trained on right-censored time-to-event outcomes using Cox Partial Likelihood.
-3. **Automated Clinical Decision Support (CDS):** Synthesizes risk scores, top-ranked pathway cascades, and histological atypia into a 5-part Multidisciplinary Tumor Board (MDT) clinical report using **Hugging Face Serverless 70B LLMs** with automated multi-model failover.
-4. **Interactive 1400px Clinical Console:** Features an interactive 3-mode WSI canvas viewer (Raw H&E, Cross-Attention Heatmap, Hotspots $\ge 0.72$), publication-grade Kaplan-Meier curves with 95% Confidence Interval ribbons, cohort ingestion for custom `.svs` slides and RNA-seq counts, and $2\times$ Retina clinical PDF generation.
+### The Naive Fusion Pitfall
+Previous computational attempts at multimodal integration suffer from two primary failure modes:
+1. **Unconstrained Genomic Overfitting:** Passing $\approx 20,000$ raw gene expression dimensions into standard Multilayer Perceptrons (MLPs) causes catastrophic overfitting on limited patient cohorts ($N \approx 400$), creating uninterpretable "black box" models.
+2. **Late-Stage Concatenation:** Flattening extracted vision features and transcriptomic vectors into a single 1D array destroys spatial histomorphology and pathway hierarchies, preventing biological cross-modal reasoning.
+
+**OncoBot resolves this disconnect** by engineering a biologically constrained, **Pathway-Aware Multimodal Transformer (PAMT)** that models the direct interactions between activated genomic cascades and spatial tissue phenotypes.
+
+---
+
+## 🔬 Core Innovation: Pathway-Aware Multimodal Transformer (PAMT)
 
 ```
-+----------------------------------------------------------------------------------------------------+
-|                                    ONCOBOT MULTIMODAL PIPELINE                                      |
-+----------------------------------------------------------------------------------------------------+
-|  [H&E Whole-Slide Image]  --> OpenSlide Thumbnail Mask --> Sweet-Spot Sampling (1024) --> DINO ViT |
-|                                                                                                    |
-|  [Bulk RNA-Seq Profile]   --> Log2 Normalization       --> 320 KEGG Pathway Mask   --> PAMT Trans. |
-|                                                                                                    |
-|                      ======== MULTI-HEAD CROSS-ATTENTION FUSION ========                            |
-|                            (Genomic Queries  <-->  Visual Keys/Values)                             |
-|                                                                                                    |
-|  --> Cox-PH Hazard Head    --> Stratified Kaplan-Meier Survival Analytics (Log-Rank p < 0.0001)    |
-|  --> Spatial Heatmaps      --> Histopathology Hotspot Localization (alpha >= 0.72)                 |
-|  --> Hugging Face 70B LLM  --> 5-Section Oncology Report (Llama-3.3-70B / DeepSeek-V3 / Qwen-2.5)  |
-|  --> jsPDF + html2canvas   --> 2x Retina Publication-Grade Patient Dossier PDF Export               |
-+----------------------------------------------------------------------------------------------------+
+====================================================================================================
+                                ONCOBOT PAMT CROSS-ATTENTION SCHEME
+====================================================================================================
+
+      Genomic Pathway Queries (Q)                   Pathology Patch Keys & Values (K, V)
+   [ 320 KEGG Biological Pathways ]                 [ 1,024 DINO ViT-S/16 Patch Tokens ]
+                  │                                                    │
+                  │ Q = W_q · E_genomic                                │ K = W_k · E_path
+                  │                                                    │ V = W_v · E_path
+                  ▼                                                    ▼
+             ┌──────────────────────────────────────────────────────────────┐
+             │       Multi-Head Cross-Attention: Softmax( Q K^T / √d_k ) V  │
+             └──────────────────────────────────────────────────────────────┘
+                                             │
+               "Which tissue morphology regions correspond to this upregulated pathway?"
+                                             │
+                                             ▼
+                                  [ Fused Multimodal Tensor ]
+                                             │
+                                             ▼
+                                [ Cox-PH Proportional Hazards ]
+                                    Risk Score h(t | x)
+====================================================================================================
 ```
 
+### 1. Biological Pathway Constraining
+Instead of unconstrained gene weights, OncoBot parses the **320 canonical cancer pathways** from the Broad Institute MSigDB KEGG 2021 gene set collection. These pathways are compiled into a sparse binary mask:
+$$\mathbf{M} \in \{0, 1\}^{320 \times 4500}$$
+where $\mathbf{M}_{p, g} = 1$ if gene $g$ belongs to pathway $p$. This physically forces the genomic encoder to learn at the biological pathway level (e.g., *p53 signaling*, *VEGF angiogenesis*, *ErbB pathway*, *Cell Cycle*), providing native interpretability for tumor boards.
+
+### 2. Genotype-to-Phenotype Cross-Attention
+Rather than generic concatenation, OncoBot deploys a directional **Multi-Head Cross-Attention Mechanism**:
+- **Queries ($Q$):** Genomic pathway representations ($\mathbb{R}^{320 \times d}$).
+- **Keys ($K$) and Values ($V$):** Histopathology patch tokens ($\mathbb{R}^{1024 \times d}$) extracted via self-supervised vision transformers.
+
+This mathematical formulation explicitly asks: *"Given this upregulated oncogenic pathway, which specific morphological zones within the gigapixel slide express the phenotypic phenotype?"*
+
+### 3. Survival Prognostication & Clinical Decision Support (CDS)
+- **Cox-PH Risk Head:** Outputs a continuous hazard ratio $\hat{h}(x)$ trained on right-censored overall survival (OS) outcomes using negative Cox partial log-likelihood.
+- **LLM Multidisciplinary Tumor Board (MDT) Synthesis:** Synthesizes the quantitative hazard score, top-activated KEGG pathways, and spatial hotspot metrics into a structured 5-part clinical report via Hugging Face Serverless LLM endpoints (Llama-3.3-70B, DeepSeek-V3, Qwen-2.5) with offline fallback.
+
 ---
 
-## 🔬 The Clinical Problem
-
-Bladder Urothelial Carcinoma is notorious for high molecular heterogeneity, frequent postoperative recurrence (50–70% in non-muscle invasive stages), and rapid progression to lethal muscle-invasive carcinoma (MIBC).
-
-In contemporary clinical practice:
-- **Pathologists** inspect H&E slides under brightfield microscopy to assess histological grade, nuclear pleomorphism, invasion depth (lamina propria vs. muscularis propria), and stromal desmoplasia. However, subjective visual inspection exhibits inter-observer variability and cannot observe latent somatic mutations.
-- **Molecular Biologists** sequence bulk RNA to quantify gene expression (e.g., *FGFR3*, *TP53*, *RB1*, *PIK3CA*), yet bulk expression profiles lose all spatial tissue context and cellular architecture.
-- **Oncologists & MDTs** struggle to manually synthesize these disparate datasets to decide whether a patient requires immediate neoadjuvant platinum-based chemotherapy, radical cystectomy, or immune checkpoint blockade (e.g., anti-PD-L1/PD-1).
-
-**OncoBot resolves this division** by mathematically modeling the interaction between activated somatic pathways and the physical cellular morphology of the tumor microenvironment.
-
----
-
-## 🏛️ System Architecture
-
-The following diagram details the end-to-end dataflow from raw patient specimens to the interactive clinical cockpit:
+## 🏛️ System Architecture & Dataflow
 
 ```mermaid
 flowchart TD
-    subgraph Modality_1["Modality 1: Whole-Slide Histopathology (WSI)"]
-        A1["Raw Gigapixel Slide (.svs / .tiff)<br/>~100,000 x 100,000 pixels (4GB+)"] --> A2["Thumbnail Masking (2048x2048)<br/>Prevents 40GB RAM Allocation"]
-        A2 --> A3["Sweet-Spot Sampling (1,024 Patches)<br/>Controlled Multiprocessing (4 Workers)"]
-        A3 --> A4["Self-Supervised DINO ViT-S/16<br/>Patch Embeddings (1024 x 384)"]
-        A4 --> A5["WSI MIL Transformer Encoder<br/>cls_token Aggregation (d_model = 128)"]
+    subgraph PathBranch["Pathology Branch (Gigapixel WSI)"]
+        WSI["Raw Slide (.svs / .tif)<br/>~100,000 x 100,000 px (4GB+)"]
+        THUMB["Dynamic Thumbnail Mask (2048x2048)<br/>get_thumbnail() caps RAM < 3MB"]
+        MP["Controlled Multiprocessing (4 Workers)<br/>Sweet-Spot Tiling (1,024 Patches)"]
+        DINO["Meta DINO ViT-S/16 Backbone<br/>Self-Supervised Feature Extractor"]
+        PT_TENS["Patch Feature Matrix<br/>torch.Tensor([1024, 384])"]
+        MIL["WSI MIL Transformer Encoder<br/>Key/Value Projection (d_model = 128)"]
+        
+        WSI --> THUMB --> MP --> DINO --> PT_TENS --> MIL
     end
 
-    subgraph Modality_2["Modality 2: Bulk Transcriptomics (RNA-Seq)"]
-        B1["Normalized Gene Counts (TPM)<br/>~20,000 Human Genes"] --> B2["log2(x + 1) Normalization"]
-        B2 --> B3["Sparse Bipartite Pathway Mask (M)<br/>320 MSigDB KEGG Biological Pathways"]
-        B3 --> B4["Pathway-Aware Transformer (PAMT)<br/>Cross-Pathway Attention (d_model = 128)"]
+    subgraph GenBranch["Genomic Branch (Bulk RNA-Seq)"]
+        RNA["Bulk RNA-Seq Expression<br/>Raw Counts / TPM (4,500 Genes)"]
+        LOG["Log-Transform & Standardization<br/>log2(TPM + 1) -> z-score"]
+        KEGG["320 KEGG Pathway Binary Mask<br/>M in {0, 1}^(320 x 4500)"]
+        PAMT_ENC["Pathway-Aware Transformer Encoder<br/>Query Projection (d_model = 128)"]
+        
+        RNA --> LOG --> KEGG --> PAMT_ENC
     end
 
-    subgraph Cross_Modal_Fusion["Multimodal Fusion & Prognosis"]
-        A5 --> C1["Multi-Head Cross-Attention<br/>Queries = Genomics | Keys/Values = Pathology"]
-        B4 --> C1
-        C1 --> C2["Fused Patient Representation (d_model = 128)<br/>Residual Connection + GELU FFN"]
-        C2 --> C3["Cox-PH Survival Prediction Head<br/>Dense(128 -> 64 -> 32 -> 1)"]
-        C3 --> C4["Continuous Risk Score h(x)<br/>Stratified Hazard Percentile"]
+    subgraph FusionEngine["Cross-Attention Multimodal Engine"]
+        XATTN["Multi-Head Cross-Attention<br/>Q = Genomic Pathways, K/V = WSI Patches<br/>Softmax(Q K^T / sqrt(d_k)) * V"]
+        FUSED["Fused Latent Representation<br/>torch.Tensor([1, 128])"]
+        
+        PAMT_ENC -->|Queries Q| XATTN
+        MIL -->|Keys K, Values V| XATTN
+        XATTN --> FUSED
     end
 
-    subgraph Clinical_Synthesis["Automated Decision Support & UI"]
-        C4 --> D1["Kaplan-Meier Survival Engine<br/>95% CI Ribbons & At-Risk Tables"]
-        C1 --> D2["Spatial Attention Matrix<br/>Overlay & Hotspots (alpha >= 0.72)"]
-        C4 & D2 & B4 --> D3["Hugging Face Serverless Router<br/>Llama-3.3-70B / DeepSeek-V3 / Qwen-2.5"]
-        D3 --> D4["5-Section Clinical Oncology Report"]
-        D1 & D2 & D4 --> D5["1400px React 19 Clinical Console"]
-        D5 --> D6["2x Retina jsPDF Clinical Export"]
+    subgraph Downstream["Clinical Prognosis & Explainability"]
+        COX["Cox-PH Survival Head<br/>Risk Score h(t | x)"]
+        KM["Kaplan-Meier Stratification<br/>Log-Rank p < 0.0001 (95% CI)"]
+        ATTN_MAP["Spatial Heatmap Engine<br/>32x32 Cross-Attention Hotspots"]
+        LLM["Hugging Face 70B Serverless LLM<br/>5-Section MDT Tumor Board Report"]
+        PDF["Off-Screen 2x Retina Canvas Compositor<br/>Publication-Grade Clinical Dossier PDF"]
+        
+        FUSED --> COX
+        COX --> KM
+        XATTN --> ATTN_MAP
+        COX --> LLM
+        ATTN_MAP --> LLM
+        KM --> PDF
+        ATTN_MAP --> PDF
+        LLM --> PDF
     end
-
-    style Modality_1 fill:#e6f4f1,stroke:#0f766e,stroke-width:2px;
-    style Modality_2 fill:#f8f9fa,stroke:#1e293b,stroke-width:2px;
-    style Cross_Modal_Fusion fill:#fdf2f4,stroke:#be123c,stroke-width:2px;
-    style Clinical_Synthesis fill:#f0fdf4,stroke:#15803d,stroke-width:2px;
 ```
 
 ---
 
-## 🔬 What We Used and Why (Component-by-Component Rationale)
+## 🛠️ The Engineering Battle Log (Obstacles Overcome & Production Solutions)
 
-Every technology, neural layer, and algorithmic decision in OncoBot was purposefully chosen to overcome specific biomedical and computational challenges.
+Building a multimodal clinical application bridging gigapixel histopathology and deep transformers required overcoming several critical hardware and systems bottlenecks.
 
-### 1. Pathology Branch (Vision & Spatial Morphology)
-
-| Technology / Component | What We Used | Why We Used It (Clinical & Computational Rationale) |
-| :--- | :--- | :--- |
-| **Slide Reading Engine** | Pre-compiled `OpenSlide` C-libraries with dynamic Windows DLL loading | Whole-Slide Images (`.svs`, `.tif`) use proprietary multi-resolution TIFF pyramids. OpenSlide provides fast, multi-threaded C-level tile decoding across arbitrary zoom levels. |
-| **Memory Guard** | Dynamic Thumbnail Masking (`slide.get_thumbnail((2048, 2048))`) | **Fixes the 35GB Swap Leak:** Naive tissue masking calls `slide.read_region()` at the lowest magnification level. Slides lacking pre-computed thumbnail pyramids force a 40GB array allocation into RAM. Thumbnail downsampling requests a bounded 2048x2048 array directly from the decoder, capping RAM consumption at $<3\text{MB}$. |
-| **Worker Concurrency** | Controlled Multiprocessing (4 Workers with isolated handles) | `openslide-python` does not expose an API to clear its internal C-level tile cache. Looping over a single slide handle causes memory to expand continuously. Our architecture chunks coordinates across 4 worker processes, opens separate slide instances, and forces `slide.close()`, violently destroying the C-cache before memory bloat occurs. Reduces patch extraction time from 2 minutes to 15 seconds. |
-| **Patch Sampling Strategy** | Sweet-Spot Uniform Sampling (1,024 patches at $256 \times 256\text{px}$) | Processing all 100,000+ patches in a slide is computationally intractable and redundant. K-Means clustering across gigapixel slides creates a severe CPU bottleneck. 1,024 randomly sampled patches capture the full histological diversity of the tumor microenvironment (necrosis, stroma, pleomorphic nests, lymphocytes) while fitting within modern GPU tensor memory. |
-| **Feature Extractor** | **DINO ViT-S/16** (Self-Distillation with No Labels, 384-dim) | Traditional supervised CNNs (like ResNet-50 trained on ImageNet) are heavily biased towards natural object silhouettes and global shapes (dogs, cars). DINO is a self-supervised Vision Transformer that learns patch-level and bag-level representations without human labels. It excels at preserving fine nuclear pleomorphism, chromatin clumping, and intercellular stroma. |
-| **WSI Aggregator** | **WSI Multiple Instance Learning (MIL) Transformer Encoder** ($d=128$) | A bag of patches is permutation-invariant. Rather than simple mean pooling, we prepend a learnable `[CLS]` token and pass the 1,024 patch tokens through a Transformer Encoder. Self-attention enables the model to reason about spatial dependencies across distant tissue regions. |
-
----
-
-### 2. Genomics Branch (Biology & Transcriptomics)
-
-| Technology / Component | What We Used | Why We Used It (Clinical & Computational Rationale) |
-| :--- | :--- | :--- |
-| **Expression Preprocessing** | Log2-transformation: $\log_2(\text{TPM} + 1)$ | RNA-Seq count distributions are severely right-skewed. Log-normalization stabilizes variance, reduces outlier dominance from hyper-expressed housekeeping genes, and preserves dynamic range. |
-| **Biochemical Catalog** | 320 Canonical Cancer Pathways from **MSigDB KEGG 2021** | Raw human transcriptomes contain ~20,000 genes with low sample sizes ($N \ll P$), leading standard models to memorize noise. Grouping genes into 320 KEGG pathways (e.g., `KEGG_BLADDER_CANCER`, `KEGG_P53_SIGNALING`, `KEGG_PI3K_AKT`, `KEGG_CELL_CYCLE`) injects biologically validated prior knowledge. |
-| **Sparsity Enforcement** | Sparse Bipartite Pathway Mask $\mathbf{M} \in \{0, 1\}^{\text{pathways} \times \text{genes}}$ | Unlike dense Multi-Layer Perceptrons where every gene connects to every node (an uninterpretable "black box"), our linear weights are element-wise multiplied by $\mathbf{M}$ ($\mathbf{W} \odot \mathbf{M}$). A gene can **only** pass signal to the pathways in which it participates, guaranteeing biological plausibility. |
-| **Pathway Interactivity** | **Pathway-Aware Transformer (PAMT)** ($d=128, n_{\text{head}}=4$) | Scalar pathway activations are projected into 128-dimensional tokens and passed through a multi-layer Transformer Encoder. This allows the model to learn cross-pathway metabolic crosstalk (e.g., how p53 inactivation amplifies PI3K-Akt signaling). |
+### 4.1 OpenSlide 40GB RAM Allocation Fix (C-Level Tile Caching Leak)
+- **The Failure:** During initial tissue mask generation on local hardware (Apple Silicon Mac), the process instantly stalled the operating system, triggering **35GB+ of SSD swap memory** and severe NAND degradation.
+- **The Root Cause:** Standard tissue segmentation pipelines query the coarsest pyramid level via `slide.read_region((0, 0), level, size)`. However, many clinical `.svs` files from TCGA lack pre-computed downsampled pyramid levels. As a result, OpenSlide attempted to decompress the entire $100,000 \times 100,000$ base resolution layer into uncompressed RGBA memory, requesting an immediate $\approx 40\text{GB}$ RAM buffer.
+- **The Production Fix:** We refactored slide ingestion to use `slide.get_thumbnail((2048, 2048))`:
+  ```python
+  # Prevents 40GB decompression by forcing OpenSlide C-library dynamic downsampling
+  thumbnail = slide.get_thumbnail((2048, 2048)).convert('RGBA')
+  ```
+  `get_thumbnail` forces OpenSlide's internal C routines to stream and downsample tiles on-the-fly directly from disk, producing a crisp $2048 \times 2048$ tissue segmentation mask while capping memory utilization at **$<3\text{MB}$ of RAM**.
 
 ---
 
-### 3. Cross-Modal Attention Fusion
-
-| Technology / Component | What We Used | Why We Used It (Clinical & Computational Rationale) |
-| :--- | :--- | :--- |
-| **Fusion Paradigm** | **Multi-Head Cross-Attention** ($Q=\text{Genomics}, K/V=\text{Pathology}$) | Simple vector concatenation ($[\mathbf{e}_g ; \mathbf{e}_p]$) destroys the structural correspondence between modalities. Cross-attention treats the biological pathway states as **Queries** that attend to visual tissue patches as **Keys and Values**. |
-| **Clinical Interpretability** | Attention Weight Extraction ($\alpha_{ij}$) | Mathematically answers the clinical question: *"When pathway $i$ (e.g., p53 loss) is activated, which exact tissue regions exhibit abnormal cellular phenotypes?"* The resulting attention weights directly drive our spatial heatmaps and hotspot reticles. |
-| **Regularization & Stability** | Layer Normalization + GELU Feed-Forward Network + Dropout ($0.1$) | Prevents either modality from dominating the latent embedding space and stabilizes gradient flow across deep multimodal layers. |
-
----
-
-### 4. Prognostic Survival Head (Cox-PH)
-
-| Technology / Component | What We Used | Why We Used It (Clinical & Computational Rationale) |
-| :--- | :--- | :--- |
-| **Survival Architecture** | Multi-Layer Perceptron ($128 \rightarrow 64 \rightarrow 32 \rightarrow 1$) with BatchNorm | Maps the fused 128-dimensional multimodal representation into a single continuous hazard score $\hat{h}(x)$ representing the patient's relative risk of death. |
-| **Loss Function** | **Cox Proportional Hazards Negative Log Partial Likelihood** | Standard Mean Squared Error (MSE) or Binary Cross-Entropy cannot handle **right-censored survival data** (patients alive at follow-up conclusion or lost to observation). Cox-PH evaluates the relative likelihood of failure within dynamic risk sets over time. |
-| **Numerical Optimization** | Cumulative Log-Sum-Exp Trick | Computing raw exponentials ($\sum \exp(\hat{h})$) causes floating-point overflow during backpropagation. We sort patients by descending survival time and employ log-sum-exp cumulative summation for stable gradient descent. |
-| **Validation Metric** | **Harrell's Concordance Index (C-Index = 0.784)** | C-Index measures rank-order concordance across all admissible patient pairs. An index of $0.5$ represents random guessing, while $1.0$ represents perfect temporal ranking. OncoBot achieves $0.784$, outperforming single-modality baselines by $+8.6\%$. |
+### 4.2 Controlled Multiprocessing: Slashing Tiling Time from 2m to 15s
+- **The Failure:** Sequential extraction of 1,024 tissue tiles ($256 \times 256$ pixels) took over 2 minutes per slide. OpenSlide's aggressive internal C-level tile cache continuously accumulated uncompressed pixel data, causing progressive memory leaks across batches.
+- **The Root Cause:** Python's `openslide-python` wrapper does not expose bindings to flush OpenSlide's internal C-level tile cache. Passing a shared slide handle across a long extraction loop causes the C library to retain megabytes of cached tiles in unmanaged memory.
+- **The Production Fix:** We engineered a **Controlled Multiprocessing Architecture**:
+  1. The tissue mask coordinates are chunked into 4 independent batches ($256$ patches per worker).
+  2. 4 parallel CPU worker processes are spawned using `multiprocessing.Pool`.
+  3. **Crucial Isolation:** Each worker opens its own dedicated `OpenSlide` handle, extracts its allocated 256 patches, and explicitly executes `slide.close()`.
+  ```python
+  def _worker_extract_chunk(slide_path, patch_coords_chunk):
+      slide = openslide.OpenSlide(slide_path)
+      patches = [slide.read_region(coord, 0, (256, 256)).convert('RGB') for coord in patch_coords_chunk]
+      slide.close()  # Violently purges C-level tile cache from process memory
+      return patches
+  ```
+- **The Outcome:** Forcefully closing handles destroys the underlying C-level memory before it can accumulate. Patch extraction time dropped from **120 seconds to 15 seconds**, maintaining system memory strictly below 16GB with zero swap paging.
 
 ---
 
-### 5. Automated LLM Clinical Reporting
+### 4.3 PyTorch BatchNorm 1D Single-Batch Evaluation Failure
+- **The Failure:** Running inference on a single patient file triggered a fatal PyTorch exception:
+  `ValueError: Expected more than 1 value per channel when training, got input size torch.Size([1, 128])`.
+- **The Root Cause:** `nn.BatchNorm1d` layers compute running batch statistics $(\mu_B, \sigma_B^2)$ during model training. When an un-eval'd model receives a batch size of $N=1$, computing sample variance causes a division by zero ($N - 1 = 0$), raising a fatal runtime error.
+- **The Production Fix:** Wrapped all neural module initializations and inference pipelines with mandatory `.eval()` state locks:
+  ```python
+  genomic_model.eval()
+  pathology_model.eval()
+  fusion_model.eval()
+  survival_head.eval()
 
-| Technology / Component | What We Used | Why We Used It (Clinical & Computational Rationale) |
-| :--- | :--- | :--- |
-| **Inference Infrastructure** | **Hugging Face Serverless Router API** (`https://router.huggingface.co/v1/chat/completions`) | Hosting local 70B parameter models requires costly multi-GPU enterprise hardware (e.g., $2\times$ NVIDIA A100 80GB). Hugging Face Serverless Router provides instantaneous access to state-of-the-art open weights with zero local VRAM overhead. |
-| **Primary Model** | `meta-llama/Llama-3.3-70B-Instruct` | Chosen for its clinical reasoning capacity, instruction-following fidelity, and structured medical nomenclature synthesis. |
-| **Multi-Model Failover Hierarchy** | `Llama-3.3-70B` $\rightarrow$ `DeepSeek-V3` $\rightarrow$ `Qwen-2.5-72B` $\rightarrow$ `Llama-3.1-8B` $\rightarrow$ Deterministic Clinical Synthesizer | Guarantees zero downtime. If an API rate limit, network timeout, or maintenance window occurs, the system automatically falls back through secondary frontier models and finally to an offline clinical rule-based engine. |
-| **Report Structure** | 5 Standardized Multidisciplinary Tumor Board (MDT) Sections | Translates complex mathematical tensors into actionable clinical insights: Executive Summary, Genotype-Phenotype Analysis, Histomorphological Correlates, Therapeutic Recommendations, and MDT Action Plan. |
-
----
-
-### 6. High-DPI Client-Side PDF Export
-
-| Technology / Component | What We Used | Why We Used It (Clinical & Computational Rationale) |
-| :--- | :--- | :--- |
-| **Rendering Engine** | **`jsPDF` (v4.2.1) + `html2canvas` (v1.4.1)** | Compiling PDFs via server-side headless browsers (like Puppeteer) introduces high memory overhead, cold-start latency, and sensitive patient data transfer over the wire. Client-side rendering is instantaneous and preserves HIPAA compliance. |
-| **Retina Resolution** | Canvas Scale Factor $2.0$ ($2\times$ Pixel Ratio) | Standard canvas captures produce blurry text when printed on physical paper. A $2.0$ scale factor ensures crisp, 300 DPI publication-grade vector-like typography and chart rendering. |
-| **Document Formatting** | Multi-page A4 layout with letterhead, patient dossier, and signature block | Formatted to meet international pathology laboratory documentation standards, complete with primary oncologist and molecular pathologist sign-off blocks. |
+  with torch.no_grad():
+      # Locks BatchNorm into utilizing frozen cohort moving averages
+      output = fusion_model(genomic_emb, pathology_emb)
+  ```
 
 ---
 
-### 7. Clinical Intelligence Dashboard
+### 4.4 Distributed MLOps: Cloud Feature Extraction & Cohort Pre-Computation
+- **The Challenge:** Iteratively training the PAMT model on 403 TCGA-BLCA patients by reading raw 4GB `.svs` slides on consumer hardware would require reading $\approx 1.6\text{TB}$ of image data per epoch, burning out consumer SSDs and requiring months of compute.
+- **The Distributed Architecture:** We decoupled feature extraction from multimodal training:
+  1. **Phase 1 (Cloud Feature Extraction):** Streamed gigapixel slides directly from AWS S3 (`s3://tcga-2-data/` with `--no-sign-request`) into dual **NVIDIA Tesla T4 GPUs** on cloud instances.
+  2. Extracted 1,024 tissue patches per slide and pushed them through a frozen Meta DINO ViT-S/16 backbone, yielding a dense mathematical tensor:
+     $$\mathbf{E}_{\text{WSI}} \in \mathbb{R}^{1024 \times 384}$$
+  3. Compressed each patient's gigapixel slide into a tiny **$\approx 1.5\text{MB}$ `.pt` feature file**.
+  4. **Phase 2 (Edge Multimodal Training):** Trained the Cross-Attention transformer and Cox-PH head directly on the 1.5MB `.pt` tensors and `.tsv` transcriptomic files.
+- **The Outcome:** Training converges in minutes on any workstation or laptop, eliminating hardware bottlenecks while retaining full multimodal fidelity.
 
-| Technology / Component | What We Used | Why We Used It (Clinical & Computational Rationale) |
-| :--- | :--- | :--- |
-| **Frontend Framework** | **React 19 + TypeScript + Vite 8.3** | High-speed component rendering, sub-millisecond hot-module replacement during development, and strict type safety across multimodal patient payloads. |
-| **Styling & Design System** | **Tailwind CSS v4** with a custom clinical palette | Built according to medical UI ergonomics: Deep Teal (`#0f766e`), Charcoal Navy (`#1e293b`), Card Mint (`#f0fdf4`), Sea Foam (`#ccfbf1`), Blush Sand (`#fff1f2`), and Forest Floor (`#831843`). Maximizes clinical readability during multi-hour diagnostic shifts. |
-| **Interactive Canvas** | HTML5 Canvas with Pan/Zoom & Reticle Tracking | Smooth 60 FPS viewport rendering of 1,024-tile gigapixel overlays without DOM node bloat. |
-| **Iconography** | `lucide-react` | Lightweight, scalable vector medical icons for diagnostic tools and status indicators. |
+---
+
+### 4.5 Full-Stack & Container Engineering (Docker Multi-Stage, Node 20, Debian Trixie)
+- **Node 20 / Vite Rolldown Issue:** Building the React 19 frontend on legacy Node 18 environments crashed during Vite chunk optimization due to missing `node:util.styleText` dependencies in early Rolldown/Vite bundles. **Resolved** by standardizing on `node:20-alpine` in Stage 1 of the multi-stage Docker build.
+- **Debian Trixie `libgl1` Dependency:** Standard `python:3.10-slim` images recently transitioned to Debian Trixie/Testing, where legacy `libgl1-mesa-glx` is deprecated. **Resolved** by modernizing the package installation to `libgl1` and `libglib2.0-0` alongside `openslide-tools`.
+- **Client-Side WSI Canvas Compositor for PDF Generation:** Exporting a multi-page PDF containing a $512 \times 512$ WSI attention heatmap directly using standard DOM dumpers resulted in blank canvas images. **Resolved** by designing an off-screen canvas compositor that renders the raw H&E base, calculates alpha-blended heatmap overlays, and converts the raster to high-DPI data URLs before injecting into `jsPDF`.
+
+---
+
+## 🧠 Known Limitations & Open ML Challenges (Machine Learning POV)
+
+While OncoBot delivers state-of-the-art multimodal survival prediction, several fundamental machine learning and biological challenges govern real-world clinical deployment.
+
+```
++----------------------------------------------------------------------------------------------------+
+|                         CHALLENGES EN ROUTE TO ARBITRARY IN-FLIGHT INGESTION                       |
++----------------------------------------------------------------------------------------------------+
+| 1. Gene Nomenclature    : Ensembl IDs vs HGNC Symbols vs Entrez IDs + TPM / FPKM disparities.      |
+| 2. Histopathology Shift : Scanner color profiles (Aperio vs Leica) & staining variations.          |
+| 3. Variable Patch Count : Needle biopsies (<200 patches) vs Resections (10k+ patches).             |
+| 4. Out-of-Distribution  : Non-urothelial carcinomas triggering spurious pathway activations.       |
+| 5. Latency Barrier      : Synchronous HTTP timeouts (60s) vs In-flight DINO extraction (5-8 mins). |
++----------------------------------------------------------------------------------------------------+
+```
+
+### 5.1 Gene Nomenclature & Alignment Discrepancies
+- **The Problem:** External sequencing laboratories report RNA transcriptomics across conflicting naming schemes (Ensembl Gene IDs e.g. `ENSG00000141510`, HGNC Symbols e.g. `TP53`, or Entrez IDs e.g. `7157`) and distinct quantification units (Raw counts, FPKM, RPKM, or TPM).
+- **Impact on PAMT:** The 320-pathway bipartite mask $\mathbf{M} \in \{0, 1\}^{320 \times 4500}$ expects an exact, deterministic gene column index. If gene columns are misaligned or unmapped, biological signal is scrambled (e.g., cell cycle pathways receiving expression levels from housekeeping genes).
+- **Engineering Solution:** 
+  1. Integrate an in-memory **HGNC-to-Ensembl Canonical Alias Resolver** backed by a fast parquet index.
+  2. Implement monotonic $\log_2(\text{TPM} + 1)$ conversion followed by cohort standard scaling:
+     $$z_g = \frac{x_g - \mu_{g, \text{TCGA}}}{\sigma_{g, \text{TCGA}} + \epsilon}$$
+  3. Impute unmeasured genes with the TCGA-BLCA population median rather than zeros to avoid false pathway suppression.
+
+---
+
+### 5.2 Histopathology Stain Variations & Batch Effects
+- **The Problem:** Digital slides exhibit severe domain shifts across medical centers due to varying Hematoxylin & Eosin reagent formulations, staining dwell times, and slide scanner optics (Aperio ScanScope vs. Hamamatsu NanoZoomer vs. Philips Ultra Fast).
+- **Impact on Vision Transformers:** Although self-supervised models (DINO) generalize better than supervised CNNs, extreme color deviations still shift the 384-dimensional patch latent representations.
+- **Engineering Solution:** Implement **Macenko Optical Density Normalization** during patch extraction:
+  $$\mathbf{OD} = -\log_{10}\left(\frac{\mathbf{I}}{255}\right)$$
+  Decompose OD matrices via Singular Value Decomposition (SVD) to identify stain vectors, projecting patches onto a standard reference target before inference.
+
+---
+
+### 5.3 Variable Patch Budgets & Dynamic Key-Padding Masks
+- **The Problem:** Surgical resections yield thousands of viable tumor patches, whereas transurethral resections (TURBT) or core needle biopsies may yield fewer than 200 viable tiles.
+- **The Fix:** Two-pronged approach:
+  - *Stochastic Oversampling:* Sample tiles with replacement if viable tissue count $K < 1024$.
+  - *Attention Key-Padding:* Pass a boolean mask $\mathbf{M}_{\text{pad}} \in \{0, 1\}^{1 \times 1024}$ to the Multi-Head Cross-Attention layer:
+    $$\text{Attention}(Q, K, V, \mathbf{M}_{\text{pad}}) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}} + (1 - \mathbf{M}_{\text{pad}}) \cdot (-10^9)\right) V$$
+
+---
+
+### 5.4 Out-of-Distribution (OOD) Organ Calibration
+- **The Problem:** OncoBot is trained exclusively on Bladder Urothelial Carcinoma (`TCGA-BLCA`). If an arbitrary user uploads a breast (`BRCA`) or lung (`LUAD`) biopsy, bladder-specific prognostic markers (e.g., `KEGG_BLADDER_CANCER` FGFR3/HRAS cascades) become clinically meaningless.
+- **Engineering Solution:** Calculate the **Mahalanobis Distance** of the fused patient latent vector $\mathbf{z}_{\text{patient}}$ against the TCGA-BLCA training centroid:
+  $$D_M(\mathbf{z}) = \sqrt{(\mathbf{z} - \boldsymbol{\mu}_{\text{train}})^T \boldsymbol{\Sigma}_{\text{train}}^{-1} (\mathbf{z} - \boldsymbol{\mu}_{\text{train}})}$$
+  If $D_M > \tau_{\text{threshold}}$, display an alert: *"Elevated Out-of-Distribution Index: Specimen morphology exhibits significant divergence from the reference bladder cohort."*
+
+---
+
+### 5.5 In-Flight Latency & The Enterprise Asynchronous Worker Roadmap
+- **The Latency Problem:** Synchronous HTTP requests fail for arbitrary gigapixel slides because browser and reverse proxy gateways timeout after 60 seconds:
+  - Slide upload over internet: 45–180 seconds.
+  - Tissue segmentation & tile extraction: 20–40 seconds.
+  - DINO ViT-S/16 forward pass on 1,024 patches: $\approx 20\text{s}$ on GPU, but **4–8 minutes on Cloud CPU**.
+- **The Production Architecture:**
+
+```
+[Browser Client]
+       │
+       │ 1. POST /api/v1/jobs/upload-request { filename, size }
+       ▼
+[FastAPI Gateway]
+       │
+       │ 2. Issues S3 Pre-Signed Multipart Upload URL
+       ▼
+[AWS S3 Bucket]
+       │
+       │ 3. Direct Multipart Client Upload (Bypasses Web Server RAM)
+       ▼
+[Redis / AWS SQS Message Queue]
+       │
+       │ 4. Enqueues job: { job_id, s3_wsi_uri, s3_rna_uri }
+       ▼
+[Celery / Ray GPU Worker Pool (NVIDIA A10G / T4)]
+       ├── Step A: OpenSlide Multiprocessing Tiling (1,024 Patches)
+       ├── Step B: DINO ViT-S/16 Feature Extraction -> [1024, 384] tensor
+       ├── Step C: Canonical RNA Mapping -> [1, 4500] tensor
+       └── Step D: Cross-Attention + Cox-PH Head -> Hazard & Attention Matrix
+       │
+       │ 5. Writes inference results & attention grid to Database / Cache
+       ▼
+[Client Web UI (SSE / WebSocket Live Progress Stepper)]
+       ├── Stage 1: "Streaming & segmenting tissue morphology (25%)"
+       ├── Stage 2: "Extracting 1,024 DINO ViT-S/16 patch tokens (50%)"
+       ├── Stage 3: "Synthesizing Cross-Attention KEGG matrices (75%)"
+       └── Stage 4: "Completed! Viewing Interactive Console & PDF (100%)"
+```
+
+---
+
+## 🚀 Local Showcase Setup & Execution Guide (Step-by-Step)
+
+You can run OncoBot either via local developer environments (Conda + Node) or via a single-command production Docker container.
+
+### Option A: Local Development with Conda & Node.js
+
+#### Prerequisites:
+- Python 3.10+
+- Node.js 20+
+- OpenSlide C Library:
+  - **macOS:** `brew install openslide`
+  - **Ubuntu/Debian:** `sudo apt-get install openslide-tools libgl1 libglib2.0-0`
+
+#### Step 1: Clone the Repository & Configure Environment
+```bash
+git clone https://github.com/charan-cherry/Onco_Bot.git
+cd Onco_Bot
+
+# Copy and edit environment variables (optional: add Hugging Face token)
+cp .env.example .env
+```
+
+#### Step 2: Set Up Python Backend
+```bash
+# Create and activate conda environment
+conda create -n onco_bot python=3.10 -y
+conda activate onco_bot
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start FastAPI backend server
+uvicorn server:app --reload --host 0.0.0.0 --port 8000
+```
+Backend will be live at `http://localhost:8000`.
+
+#### Step 3: Set Up React Frontend (Separate Terminal)
+```bash
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Start Vite development server
+npm run dev
+```
+Open `http://localhost:5173` in your browser.
+
+---
+
+### Option B: Single-Command Production Docker Deployment
+
+The multi-stage Dockerfile packages both the React 19 production build and the FastAPI backend into a self-contained container:
+
+```bash
+# 1. Build the production image
+docker build -t oncobot-app:latest .
+
+# 2. Run container (maps port 8000)
+docker run -p 8000:8000 oncobot-app:latest
+```
+Access the application immediately at **`http://localhost:8000`**.
+
+---
+
+### Testing with the 5 Pre-Packaged Demo Patients
+
+We have pre-packaged **5 clinical patient test cases** in [`test_patients_for_ui/`](test_patients_for_ui/):
+- `TCGA-2F-A9KO` (High-Risk Muscle-Invasive Profile)
+- `TCGA-2F-A9KP` (Low-Risk Favorable Profile)
+- `TCGA-2F-A9KQ` (Intermediate-Risk Profile)
+- `TCGA-2F-A9KR` (High-Risk Profile)
+- `TCGA-2F-A9KT` (Intermediate-Risk Profile)
+
+```
+test_patients_for_ui/
+├── TCGA-2F-A9KO/
+│   ├── TCGA-2F-A9KO_slide.svs        # Real WSI specimen file
+│   ├── TCGA-2F-A9KO_rna.tsv          # Real RNA-Seq count matrix (20,000 genes)
+│   └── TCGA-2F-A9KO_features.pt      # Pre-extracted 1,024 DINO feature tensor
+├── TCGA-2F-A9KP/ ...
+```
+
+#### Step-by-Step UI Upload Walkthrough:
+1. Open `http://localhost:8000` (or `http://localhost:5173`) in your browser.
+2. In the top navigation, click on **Upload Patient** mode.
+3. In the upload card:
+   - Click **Select Whole-Slide Image (.svs)** $\rightarrow$ choose `test_patients_for_ui/TCGA-2F-A9KO/TCGA-2F-A9KO_slide.svs`.
+   - Click **Select RNA-Seq Counts (.tsv / .csv)** $\rightarrow$ choose `test_patients_for_ui/TCGA-2F-A9KO/TCGA-2F-A9KO_rna.tsv`.
+4. Click **Upload & Run Analysis**.
+
+#### What Happens Behind the Scenes (<0.3s):
+1. **Dynamic Slide Thumbnailing:** OpenSlide generates a $512 \times 512$ thumbnail directly from the uploaded `.svs` file in $<30\text{ms}$.
+2. **Feature Linking:** The backend matches the slide ID to its pre-extracted 1,024 DINO feature tensor (`TCGA-2F-A9KO_features.pt`), bypassing heavy local CPU extraction.
+3. **Real RNA Ingestion:** Reads the uploaded `.tsv` expression counts, executes $\log_2(x + 1)$ transformation, standardizes the vector, and feeds it into the `PathwayAwareTransformer`.
+4. **PyTorch Forward Pass:** Multi-Head Cross-Attention fuses the genomic queries with pathology keys/values, and the `CoxSurvivalHead` computes the continuous hazard ratio.
+5. **Interactive Visualization:** The dashboard renders the interactive WSI canvas (Raw H&E, Heatmap, Hotspots $\ge 0.72$), stratified Kaplan-Meier curves, and enables one-click **Clinical PDF Export**.
 
 ---
 
 ## 📐 Mathematical Formulations
 
-### 1. Sparse Bipartite Pathway Projection
-Let $\mathbf{x} \in \mathbb{R}^{G}$ be the $\log_2$-normalized gene expression vector for $G$ genes. Given a binary bipartite pathway mask $\mathbf{M} \in \{0, 1\}^{P \times G}$ for $P$ biological pathways, the pathway activation vector $\mathbf{p} \in \mathbb{R}^{P}$ is defined as:
+### 1. Pathway Masking & Projection
+Let $\mathbf{x}_{\text{rna}} \in \mathbb{R}^{G}$ be the patient's log-normalized transcriptomic profile across $G=4,500$ genes. For pathway $p \in \{1, \dots, 320\}$, the pathway embedding is computed as:
+$$\mathbf{e}_p = \mathbf{W}_p \left( \mathbf{x}_{\text{rna}} \odot \mathbf{M}_{p, :} \right) + \mathbf{b}_p$$
+where $\mathbf{M} \in \{0, 1\}^{320 \times 4500}$ is the binary KEGG mask and $\odot$ represents the Hadamard element-wise product.
 
-$$\mathbf{p} = \text{ReLU}\left( (\mathbf{W} \odot \mathbf{M})\mathbf{x} + \mathbf{b} \right)$$
+### 2. Multi-Head Cross-Attention Fusion
+Given genomic pathway tokens $\mathbf{E}_{\text{gen}} \in \mathbb{R}^{320 \times d}$ and visual patch tokens $\mathbf{E}_{\text{path}} \in \mathbb{R}^{1024 \times d}$:
+$$\mathbf{Q} = \mathbf{E}_{\text{gen}} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{E}_{\text{path}} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{E}_{\text{path}} \mathbf{W}_V$$
+$$\mathbf{A} = \text{Softmax}\left( \frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d_k}} \right)$$
+$$\mathbf{Z}_{\text{cross}} = \mathbf{A} \mathbf{V} \in \mathbb{R}^{320 \times d}$$
 
-where $\odot$ denotes the Hadamard (element-wise) product, $\mathbf{W} \in \mathbb{R}^{P \times G}$ are learnable weights initialized via Kaiming Uniform, and $\mathbf{b} \in \mathbb{R}^{P}$ is the bias. Each scalar activation $p_i$ is subsequently projected into the model dimension $d_{\text{model}}$:
-
-$$\mathbf{T}_{\text{pathways}} = \mathbf{p} \mathbf{W}_{\text{proj}} \in \mathbb{R}^{P \times d_{\text{model}}}$$
-
-### 2. Multi-Head Cross-Attention Mechanism
-Let $\mathbf{E}_g \in \mathbb{R}^{P \times d_{\text{model}}}$ be the encoded pathway representations and $\mathbf{E}_p \in \mathbb{R}^{N \times d_{\text{model}}}$ be the encoded WSI patch representations ($N=1,024$).
-
-The cross-attention mechanism projects genomics as the Query ($Q$) and pathology as Key ($K$) and Value ($V$):
-
-$$Q = \text{LayerNorm}(\mathbf{E}_g)\mathbf{W}_Q, \quad K = \text{LayerNorm}(\mathbf{E}_p)\mathbf{W}_K, \quad V = \text{LayerNorm}(\mathbf{E}_p)\mathbf{W}_V$$
-
-For each attention head $h \in \{1, \dots, H\}$:
-
-$$\text{Head}_h = \text{softmax}\left( \frac{Q_h K_h^T}{\sqrt{d_k}} \right) V_h$$
-
-The multi-head output is linearly projected and added via a residual connection:
-
-$$\mathbf{Z} = \text{LayerNorm}\left( Q + \text{Concat}(\text{Head}_1, \dots, \text{Head}_H)\mathbf{W}_O \right)$$
-
-$$\mathbf{E}_{\text{fused}} = \text{FFN}(\mathbf{Z}) = \text{LayerNorm}\left( \mathbf{Z} + \text{Dropout}(\mathbf{W}_2 \cdot \text{GELU}(\mathbf{W}_1 \mathbf{Z} + \mathbf{b}_1) + \mathbf{b}_2) \right)$$
-
-### 3. Cox Proportional Hazards Partial Likelihood
-Let $T_i$ denote the observed survival time, $C_i \in \{0, 1\}$ the censoring indicator ($1 = \text{death observed}, 0 = \text{censored}$), and $\hat{h}_i = f(\mathbf{E}_{\text{fused}}^{(i)})$ the predicted scalar log-hazard for patient $i$.
-
-The parameters are optimized by minimizing the Negative Log Partial Likelihood across all uncensored events:
-
-$$\mathcal{L}_{\text{Cox}}(\theta) = -\sum_{i: C_i = 1} \left[ \hat{h}_i - \ln \left( \sum_{j \in \mathcal{R}(T_i)} \exp(\hat{h}_j) \right) \right]$$
-
-where $\mathcal{R}(T_i) = \{j : T_j \ge T_i\}$ represents the risk set of patients who remain alive and uncensored immediately prior to time $T_i$.
-
-To avoid numerical overflow, the denominator is evaluated via the Log-Sum-Exp identity:
-
-$$\ln \left( \sum_{j \in \mathcal{R}(T_i)} \exp(\hat{h}_j) \right) = m + \ln \left( \sum_{j \in \mathcal{R}(T_i)} \exp(\hat{h}_j - m) \right), \quad m = \max_{j \in \mathcal{R}(T_i)} \hat{h}_j$$
-
-### 4. Harrell's Concordance Index (C-Index)
-Model discriminative capability is quantified by Harrell's C-Index over all pairs of patients $(i, j)$:
-
-$$\text{C-Index} = \frac{\sum_{i \neq j} \mathbf{1}_{T_i < T_j} \cdot \mathbf{1}_{C_i = 1} \cdot \left[ \mathbf{1}_{\hat{h}_i > \hat{h}_j} + 0.5 \cdot \mathbf{1}_{\hat{h}_i = \hat{h}_j} \right]}{\sum_{i \neq j} \mathbf{1}_{T_i < T_j} \cdot \mathbf{1}_{C_i = 1}}$$
-
-### 5. Stratified Kaplan-Meier Trajectory Projection
-The baseline cumulative hazard function $H_0(t)$ is estimated from the TCGA-BLCA reference cohort. The predicted survival probability $S_i(t)$ for patient $i$ at follow-up month $t$ is calculated by:
-
-$$S_i(t) = \left[ S_0(t) \right]^{\exp(\hat{h}_i - \bar{h})}$$
-
-where $\bar{h}$ is the empirical mean hazard score of the reference population. The cumulative hazard curve is evaluated as:
-
-$$H_i(t) = -\ln\left( S_i(t) \right) = H_0(t) \cdot \exp(\hat{h}_i - \bar{h})$$
-
----
-
-## 🖥️ Interactive Clinical Features
-
-### 1. Interactive WSI Canvas & Cross-Attention Viewport
-- **3 Visual Modes:**
-  - **Attention Overlay:** Blends a calibrated cross-attention gradient (Deep Teal $\rightarrow$ Sage $\rightarrow$ Rose $\rightarrow$ Crimson) directly over high-resolution tissue.
-  - **Raw WSI:** Strips overlays to inspect bare histological morphology, nuclear pleomorphism, and stromal margins.
-  - **Hotspots Mode:** Dims background stroma and spotlights hyper-attended invasive tumor nests ($\alpha \ge 0.72$).
-- **Precision Reticle HUD:** Real-time $(x, y)$ coordinate tracking, patch cellularity percentage, and high-magnification 40x micro-patch previews.
-- **Hardware-Accelerated Controls:** Smooth $1.0\times$ to $4.0\times$ continuous optical zoom with mini-map viewport synchronization.
-
-### 2. Publication-Grade Kaplan-Meier Survival Analytics
-- **Dual Perspective:** Instant toggling between **Survival Probability ($S(t)$)** and **Cumulative Hazard ($H(t)$)**.
-- **95% Confidence Interval (CI) Ribbons:** Translucent mint and rose statistical confidence envelopes computed via Greenwood's formula.
-- **Censored Event Markers ($+$):** Displays individual right-censored clinical observation milestones.
-- **Interactive Timeline Scrubber:** Moving the cursor across 0 to 60 months renders a synchronized guideline reporting exact cohort percentages and patient trajectories.
-- **At-Risk Table:** Displays matched patient numbers remaining under observation at 12-month intervals ($N=206$ per cohort arm).
-
-### 3. Automated LLM Decision Support & $2\times$ Retina PDF Export
-- Generates 5 structured clinical decision support sections for Multidisciplinary Tumor Boards (MDT).
-- Direct one-click client-side export to a multi-page, 300 DPI A4 PDF document containing:
-  - Official pathology laboratory header and document identifier.
-  - Patient demographic and tumor staging dossier.
-  - Quantitative Cox-PH risk score and hazard percentile matrices.
-  - Full LLM narrative synthesis.
-  - Attending Oncologist and Molecular Pathologist sign-off blocks.
-  - Diagnostic legal disclaimer.
-
----
-
-## 📁 Repository & File Organization
-
-```
-OncoBot/
-├── .env.example                 # Environment configuration template (HF_TOKEN, HF_MODEL)
-├── requirements.txt             # Python backend dependencies
-├── server.py                    # Production FastAPI server & orchestration engine
-├── main.py                      # Model validation and tensor compilation testing
-├── run_sample.py                # Standalone end-to-end CLI inference demonstration
-├── setup.ps1                    # Native Windows PowerShell deployment script
-├── setup.sh                     # Linux / macOS / WSL2 automated setup script
-│
-├── data/                        # Data ingestion & biological mapping layer
-│   ├── genomic.py               # RNA-Seq log2 normalization & KEGG GMT pathway mask parser
-│   ├── pathology.py             # OpenSlide WSI pipeline, memory guards & DINO extractor
-│   └── dataset.py               # PyTorch Dataset wrappers for multimodal batches
-│
-├── models/                      # PyTorch Neural Network Architectures
-│   ├── genomic_branch.py        # PathwayAwareTransformer with sparse bipartite mask
-│   ├── pathology_branch.py      # WSI_MIL_Encoder (Multiple Instance Learning Transformer)
-│   ├── fusion.py                # Multi-Head CrossAttentionFusion (Genomics Q, Pathology K/V)
-│   └── survival_head.py         # CoxSurvivalHead MLP for continuous hazard prediction
-│
-├── onco_utils/                  # Clinical utilities & inference drivers
-│   ├── config.py                # Centralized dataclass configuration & environment loader
-│   ├── llm_report.py            # Hugging Face Serverless Router client with multi-model failover
-│   ├── metrics.py               # Harrell's C-Index, Kaplan-Meier curves & risk stratification
-│   └── interpretability.py     # Attention weight extraction & spatial coordinate mapping
-│
-├── training/                    # Model training & optimization routines
-│   ├── losses.py                # CoxPHLoss (negative partial log-likelihood) & InfoNCELoss
-│   └── trainer.py               # Multimodal training loop with validation checkpointing
-│
-├── Datasets/                    # Canonical biological catalogs & reference features
-│   └── kegg_cancer_pathways.gmt # 320 curated MSigDB KEGG biological cancer pathways
-│
-├── frontend/                    # Modern React 19 + Vite Clinical Cockpit
-│   ├── package.json             # NPM dependencies (React 19, Tailwind CSS v4, jsPDF, Three.js)
-│   ├── vite.config.ts           # Vite build pipeline with React plugins
-│   ├── src/
-│   │   ├── App.tsx              # Main application shell & global modal orchestrator
-│   │   ├── main.tsx             # React entry point
-│   │   ├── index.css            # Medical design tokens, typography & CSS variables
-│   │   ├── components/
-│   │   │   ├── UnifiedDashboard.tsx     # Panoramic 1400px diagnostic workspace
-│   │   │   ├── WsiViewerCard.tsx        # 3-mode interactive WSI canvas viewer
-│   │   │   ├── SurvivalCurveCard.tsx    # Publication-grade Kaplan-Meier curves with 95% CIs
-│   │   │   ├── PathwayAttentionCard.tsx # Top-ranked KEGG pathway activation breakdown
-│   │   │   ├── ClinicalReportCard.tsx   # LLM report viewer with Markdown & PDF export
-│   │   │   ├── PatientUploadCard.tsx    # Cohort ingestion for custom .svs and counts
-│   │   │   ├── CaseHistoryPanel.tsx     # Historical patient records & audit logs
-│   │   │   └── Navbar.tsx & Footer.tsx  # Header/footer with system diagnostics
-│   │   └── utils/
-│   │       └── reportPdfGenerator.ts    # 2x Retina high-DPI client-side PDF export engine
-│   └── public/assets/wsi/       # Authentic H&E reference micrographs (TCGA-BLCA)
-│
-└── docs/                        # Scientific documentation & architectural whitepapers
-    ├── how_it_works.md          # Intuitive guide to multimodal cross-attention
-    ├── project_journey.md       # Engineering milestones and roadmap
-    └── TECHNICAL_REPORT.md      # Detailed engineering case study & interview defense
-```
-
----
-
-## 🚀 Installation & Quickstart Guide
-
-### Prerequisites
-- **Python:** Version `3.10` or higher.
-- **Node.js:** Version `18.0` or higher (`npm` included).
-- **Git:** Installed on your system path.
-- **C-Libraries:** OpenSlide is required for raw `.svs` gigapixel slide processing.
-
----
-
-### Option A: Automated Setup (Recommended)
-
-#### Native Windows (PowerShell)
-```powershell
-# Run the automated Windows installer
-# Automatically downloads pre-compiled OpenSlide 64-bit binaries and builds venv:
-.\setup.ps1
-```
-
-#### Linux / macOS / WSL2 (Ubuntu)
-```bash
-# Make executable and run:
-chmod +x setup.sh
-./setup.sh
-```
-
----
-
-### Option B: Manual Setup
-
-#### 1. System-Level OpenSlide Installation
-- **Ubuntu / Debian:**
-  ```bash
-  sudo apt-get update && sudo apt-get install -y openslide-tools libopenslide0
-  ```
-- **macOS (Homebrew):**
-  ```bash
-  brew install openslide
-  ```
-- **Windows:**
-  Download the [OpenSlide Windows Binaries (v4.0.0.3)](https://github.com/openslide/openslide-bin/releases), extract to `openslide-bin/`, and ensure the `bin/` directory is registered in your path or managed via `setup.ps1`.
-
-#### 2. Python Virtual Environment Setup
-```bash
-# Clone the repository
-git clone https://github.com/arunchavan4499/OncoBot.git
-cd OncoBot
-
-# Create and activate virtual environment
-python -m venv venv
-
-# On Windows:
-.\venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-pip install fastapi uvicorn python-dotenv
-```
-
-#### 3. Frontend Setup
-```bash
-cd frontend
-npm install
-cd ..
-```
-
----
-
-### Running the Application
-
-Open two terminal windows:
-
-#### Terminal 1: Launch Backend API Server
-```powershell
-# From project root:
-py server.py
-# Or using uvicorn directly:
-py -m uvicorn server:app --host 127.0.0.1 --port 8000 --reload
-```
-*The FastAPI backend will initialize on `http://127.0.0.1:8000`. Interactive OpenAPI documentation is accessible at `http://127.0.0.1:8000/docs`.*
-
-#### Terminal 2: Launch Frontend Development Server
-```bash
-cd frontend
-npm run dev
-```
-*The React 19 interface will start on `http://localhost:5173`. Open your browser to explore the OncoBot console.*
-
----
-
-## ⚙️ Configuration & Environment Variables
-
-Create a `.env` file in the project root (copied from `.env.example`):
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your preferred settings:
-
-```env
-# Hugging Face Access Token for Clinical Decision Support Reporting
-# Obtain a free token with "Inference" permissions at: https://huggingface.co/settings/tokens
-HF_TOKEN=hf_your_actual_token_here
-
-# Primary LLM Model for Clinical Decision Support Synthesis
-HF_MODEL=meta-llama/Llama-3.3-70B-Instruct
-```
-
-> [!NOTE]
-> If `HF_TOKEN` is omitted or network access is restricted, OncoBot gracefully switches to its **internal clinically verified offline synthesis engine**, ensuring uninterrupted clinical workflows.
-
----
-
-## 🔌 REST API Specification
-
-| Endpoint | Method | Parameters | Description |
-| :--- | :--- | :--- | :--- |
-| `/api/status` | `GET` | *None* | Returns server health, hardware acceleration (CUDA/CPU), loaded KEGG pathways count, and active memory optimizations. |
-| `/api/patients` | `GET` | *None* | Lists available validation cohorts (`TCGA-2F-A9KO`, `TCGA-2F-A9KP`, `TCGA-2F-A9KQ`) with clinical metadata. |
-| `/api/patient/{id}` | `GET` | `patient_id` (path) | Retrieves detailed patient dossier (age, gender, stage, histologic grade, smoking status, survival time, key somatic mutations). |
-| `/api/run-inference` | `POST` | `patient_id` (form) | Executes the full multimodal pipeline: PAMT forward pass, DINO WSI encoding, Cross-Attention fusion, Cox-PH hazard estimation, and Kaplan-Meier curve generation. |
-| `/api/heatmap/{id}` | `GET` | `patient_id` (path) | Returns spatial grid coordinates, cellularity metrics, and normalized cross-attention weights for canvas rendering. |
-| `/api/generate-report` | `POST` | `patient_id`, `risk_score` (form) | Queries the Hugging Face Serverless Router API across candidate models to return a 5-section Markdown clinical report. |
-| `/api/upload-patient` | `POST` | `patient_id`, `wsi_file`, `rna_file` (multipart) | Ingests custom gigapixel slides (`.svs`, `.tif`, `.png`) and RNA-Seq count matrices, queuing them for dynamic inference. |
+### 3. Cox Proportional Hazards Loss
+The survival head outputs a scalar risk $\hat{h}_i = g(\mathbf{z}_i)$ parameterized by network weights $\theta$. The model is trained by minimizing the negative Cox partial log-likelihood across right-censored patient pairs:
+$$\mathcal{L}_{\text{Cox}}(\theta) = -\sum_{i: E_i = 1} \left( \hat{h}_i - \log \sum_{j \in \mathcal{R}(T_i)} \exp(\hat{h}_j) \right)$$
+where $E_i \in \{0, 1\}$ indicates the clinical event (death), $T_i$ is observed survival time, and $\mathcal{R}(T_i) = \{j : T_j \ge T_i\}$ is the risk set of individuals surviving up to time $T_i$.
 
 ---
 
 ## 📊 Clinical Validation & Benchmark Results
 
-The Pathway-Aware Multimodal Transformer was evaluated against the TCGA Bladder Urothelial Carcinoma (`TCGA-BLCA`) cohort ($N=412$ patients with matched whole-slide imaging and bulk RNA-Seq transcriptomics).
+Evaluated across the National Cancer Institute **TCGA-BLCA** cohort ($N = 412$ patients with matched clinical, whole-slide, and RNA-Seq data):
 
 ### Discriminative Concordance (Harrell's C-Index)
-
-| Model Architecture | Input Modality | C-Index | Improvement |
+| Model Architecture | Input Modalities | C-Index | Improvement vs. Baseline |
 | :--- | :--- | :---: | :---: |
-| DeepSurv (Standard MLP) | Bulk RNA-Seq Only | $0.672$ | Baseline |
-| CLAM (WSI Attention MIL) | H&E Histopathology Only | $0.698$ | $+2.6\%$ |
-| Late Fusion (Naive Concatenation) | RNA-Seq + Histopathology | $0.718$ | $+4.6\%$ |
-| **OncoBot (PAMT + Cross-Attention)** | **RNA-Seq + Histopathology** | **0.784** | **+8.6%** |
+| DeepSurv (Standard MLP) | RNA-Seq Only | $0.672$ | Baseline |
+| CLAM (Attention MIL) | Whole-Slide H&E Only | $0.698$ | $+2.6\%$ |
+| Late Fusion (Naive Concatenation) | RNA-Seq + WSI | $0.718$ | $+4.6\%$ |
+| **OncoBot (PAMT + Cross-Attention)** | **RNA-Seq + WSI** | **0.784** | **+8.6%** |
 
 ```
-Model Performance Comparison (Harrell's C-Index):
+Harrell's C-Index Comparison:
 =============================================================
 DeepSurv (Genomics Only)    | [=========>          ] 0.672
 CLAM (Pathology Only)       | [===========>        ] 0.698
@@ -510,30 +466,34 @@ OncoBot PAMT (Ours)         | [=================>  ] 0.784  (+8.6% Gain)
 ```
 
 ### Prognostic Stratification Metrics
-- **Log-Rank Test Separation:** $P < 0.0001$ (statistically significant survival divergence between stratified risk tiers).
+- **Log-Rank Test Separation:** $P < 0.0001$ between stratified risk tiers.
 - **Hazard Ratio (High vs. Low Risk):** $\text{HR} = 2.84$ ($95\%\ \text{CI}: 2.01 - 4.12$).
-- **Median Overall Survival:**
-  - **Low Risk Strata:** *Not reached* ($>60\text{ months}$).
-  - **High Risk Strata:** $22.6\text{ months}$.
 - **5-Year Overall Survival Probability:**
-  - **Low Risk Strata:** $62.1\%$.
-  - **High Risk Strata:** $18.4\%$.
+  - **Low-Risk Strata:** $62.1\%$.
+  - **High-Risk Strata:** $18.4\%$.
 
 ---
 
-## ⚖️ Medical Disclaimer & Ethical Use
+## 🔌 REST API Specification
+
+| Endpoint | Method | Input Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `/api/status` | `GET` | *None* | Healthcheck, device status (CUDA/CPU), pathway count, and active cache optimizations. |
+| `/api/patients` | `GET` | *None* | Lists available pre-loaded validation patients with clinical stage and survival metadata. |
+| `/api/patient/{id}` | `GET` | `id` (path) | Retrieves patient dossier (age, stage, histologic grade, survival months, somatic mutations). |
+| `/api/run-inference` | `POST` | `patient_id` (form) | Executes PAMT forward pass, cross-attention fusion, Cox hazard calculation, and Kaplan-Meier curves. |
+| `/api/heatmap/{id}` | `GET` | `id` (path) | Returns spatial grid coordinates, cellularity metrics, and normalized cross-attention weights. |
+| `/api/generate-report` | `POST` | `patient_id`, `risk_score` (form) | Queries Hugging Face 70B LLM router to generate a 5-section MDT clinical report in Markdown. |
+| `/api/upload-patient` | `POST` | `patient_id`, `wsi_file`, `rna_file` (multipart) | Ingests `.svs` gigapixel slides and RNA-seq counts, linking pre-extracted features for instant execution. |
+
+---
+
+## ⚖️ Ethical Use, Medical Disclaimer & Citations
 
 > [!CAUTION]
-> **Research Use Only (RUO):** OncoBot is an experimental multimodal deep learning platform developed for scientific investigation, translational oncology benchmarking, and academic research. It is **not** an FDA-cleared, CE-marked, or SaMD-certified diagnostic medical device. 
-> 
-> Under no circumstances should OncoBot's predicted risk scores, survival trajectories, or LLM-synthesized recommendations be used as the primary basis for clinical diagnosis, treatment decisions, or drug prescription without independent verification by a licensed, board-certified Pathologist and Medical Oncologist.
+> **Research Use Only (RUO):** OncoBot is an experimental multimodal deep learning platform developed for translational oncology benchmarking and scientific research. It is **not** an FDA-approved or CE-marked Software as a Medical Device (SaMD). It must **not** be used as the primary diagnostic or therapeutic tool without independent verification by board-certified pathologists and oncologists.
 
----
-
-## 📚 Citations & References
-
-If you utilize OncoBot or its architectural components in your academic work, please cite the following foundational publications:
-
+### Citations
 ```bibtex
 @article{onco_bot_2026,
   title   = {OncoBot: Pathway-Aware Multimodal Transformer for Cancer Survival Prognostication and Explainable Decision Support},
@@ -572,28 +532,6 @@ If you utilize OncoBot or its architectural components in your academic work, pl
 
 ---
 
-## 🏛️ Institutional & Data Acknowledgements
-
-- **Data Source:** National Cancer Institute Genomic Data Commons (NCI GDC) The Cancer Genome Atlas (TCGA) Bladder Urothelial Carcinoma (`TCGA-BLCA`) cohort.
-- **Biochemical Pathways:** Molecular Signatures Database (MSigDB) and Kyoto Encyclopedia of Genes and Genomes (KEGG).
-- **Vision Foundation:** Meta AI Research (DINO Vision Transformers).
-
-
-## Production Deployment (Docker)
-The entire unified platform (React Frontend + FastAPI Backend) is fully containerized. To build and run:
-```bash
-# 1. Build the multi-stage Docker image
-docker build -t oncobot:latest .
-
-# 2. Run the application
-docker run -p 8000:8000 oncobot:latest
-```
-Access the application at `http://localhost:8000`.
-
-## Testing the UI (Single Patients)
-If you want to test the Web UI without needing a 4GB Whole Slide Image, we have carved out 5 isolated patients.
-1. Look in the `test_patients_for_ui/` directory.
-2. Open the web dashboard and click "Upload Patient Case".
-3. Upload `TCGA-DK-A3IS_rna.tsv` into the RNA-Seq box.
-4. Upload `TCGA-DK-A3IS_features.pt` into the WSI box.
-5. The pipeline will securely bypass AWS chunking and run the trained PyTorch inference directly!
+<p align="center">
+  <b>OncoBot</b> — Bridging Spatial Histopathology and Transcriptomics for Precision Oncology.
+</p>

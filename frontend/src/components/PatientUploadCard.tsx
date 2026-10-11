@@ -239,7 +239,7 @@ export const PatientUploadCard: React.FC<PatientUploadCardProps> = ({
           {/* Column 1: RNA-SEQ COUNTS */}
           <div className="flex flex-col">
             <span className="font-mono text-[11px] font-semibold text-charcoal-navy/70 tracking-wider uppercase mb-2">
-              RNA-SEQ COUNTS
+              RNA-SEQ GENE COUNTS (.tsv, .csv)
             </span>
 
             {/* File Upload Box */}
@@ -255,7 +255,7 @@ export const PatientUploadCard: React.FC<PatientUploadCardProps> = ({
                     {rnaFile.name} ({(rnaFile.size / 1024).toFixed(0)} KB)
                   </span>
                 ) : (
-                  'Choose TSV or CSV'
+                  'Choose TSV or CSV gene count file'
                 )}
               </span>
               <input
@@ -295,7 +295,7 @@ export const PatientUploadCard: React.FC<PatientUploadCardProps> = ({
           {/* Column 2: WHOLE-SLIDE IMAGE (SVS) */}
           <div className="flex flex-col">
             <span className="font-mono text-[11px] font-semibold text-charcoal-navy/70 tracking-wider uppercase mb-2">
-              WHOLE-SLIDE / PATHOLOGY IMAGE
+              WHOLE-SLIDE HISTOLOGY (.svs)
             </span>
 
             {/* File Upload Box */}
@@ -311,13 +311,13 @@ export const PatientUploadCard: React.FC<PatientUploadCardProps> = ({
                     {wsiFile.name} ({(wsiFile.size / (1024 * 1024)).toFixed(1)} MB)
                   </span>
                 ) : (
-                  'Choose SVS or image file'
+                  'Choose SVS digital slide (.svs)'
                 )}
               </span>
               <input
                 ref={wsiInputRef}
                 type="file"
-                accept=".svs,.tif,.tiff,.ndpi,.mrxs,.png,.jpg,.jpeg,.pt"
+                accept=".svs,.tif,.tiff,.ndpi,.mrxs,.png,.jpg,.jpeg"
                 onChange={handleWsiChange}
                 className="hidden"
               />
@@ -352,7 +352,7 @@ export const PatientUploadCard: React.FC<PatientUploadCardProps> = ({
         {/* Footer Note & Upload CTA Button */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-charcoal-navy/10">
           <p className="font-sans text-[11px] text-[#4a5e5d] max-w-[620px] leading-relaxed">
-            Patient ID is detected automatically from the SVS filename and matched to the RNA-seq sample column. RNA-seq files are limited to 300 MB; public Google Drive SVS files use the separate 10 GB slide limit.
+            Patient ID is detected automatically from the .svs slide filename and mapped to paired RNA-seq gene counts. OncoBot extracts 1,024 DINO ViT-S/16 tissue tokens and projects transcriptomic counts through 320 KEGG biological pathways for Cross-Attention fusion.
           </p>
 
           <button

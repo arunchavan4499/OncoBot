@@ -21,27 +21,31 @@ def export_single_patients(num_patients=5):
     df_cohort = pd.read_csv(csv_path)
     df_rna = pd.read_csv(tsv_path, sep='\t', index_col=0)
     
-    # Deduplicate RNA index to avoid Pandas crash
-    df_rna = df_rna[~df_rna.index.duplicated(keep='first')]
+    # Deduplicate RNA columns to avoid Pandas crash (if any duplicate patients exist)
+    df_rna = df_rna.loc[:, ~df_rna.columns.duplicated(keep='first')]
     
     # 2. Select patients that actually have extracted WSI features
     available_patients = []
+    
+    # Create a mapping from base PID (12 chars) to actual RNA column name
+    rna_cols_map = {col[:12]: col for col in df_rna.columns}
+    
     for _, row in df_cohort.iterrows():
         pid = row['case_barcode'][:12]
         pt_path = os.path.join(features_dir, f"{pid}_features.pt")
-        if os.path.exists(pt_path) and pid in df_rna.index:
-            available_patients.append(pid)
+        
+        if os.path.exists(pt_path) and pid in rna_cols_map:
+            available_patients.append((pid, rna_cols_map[pid]))
             
     # Take the requested number of patients
     selected = available_patients[:num_patients]
     
-    for pid in selected:
+    for pid, actual_col in selected:
         patient_folder = os.path.join(out_dir, pid)
         os.makedirs(patient_folder, exist_ok=True)
         
-        # A) Export this single patient's RNA-Seq row to a standalone TSV file
-        # We keep the column headers but only save this one patient's row
-        single_rna = df_rna.loc[[pid]]
+        # A) Export this single patient's RNA-Seq column to a standalone TSV file
+        single_rna = df_rna[[actual_col]].rename(columns={actual_col: pid})
         rna_out_path = os.path.join(patient_folder, f"{pid}_rna.tsv")
         single_rna.to_csv(rna_out_path, sep='\t')
         print(f"[{pid}] Saved RNA-Seq to: {rna_out_path}")

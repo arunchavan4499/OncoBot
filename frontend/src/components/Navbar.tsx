@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, FileText, History, LogIn, TrendingUp } from 'lucide-react';
+import { BarChart3, FileText, History, TrendingUp } from 'lucide-react';
 import type { SystemStatus, UserProfile } from '../types';
 import type { DashboardTab } from './UnifiedDashboard';
 
@@ -15,9 +15,7 @@ interface NavbarProps {
   isResultsPage?: boolean;
   user?: UserProfile | null;
   onOpenProfile?: () => void;
-  onOpenSignIn?: () => void;
   isProfilePage?: boolean;
-  isSignInPage?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -31,9 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isResultsPage = false,
   user,
   onOpenProfile,
-  onOpenSignIn,
   isProfilePage = false,
-  isSignInPage = false,
 }) => {
   const handleNavClick = (tab: DashboardTab) => {
     if (onSelectTab) {
@@ -73,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         .filter(Boolean)
         .join('')
         .slice(0, 2)
-    : 'MD';
+    : 'GI';
 
   return (
     <nav
@@ -166,42 +162,30 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </button>
 
-        {/* Profile Pill (when signed in) OR Sign In Button (when signed out) */}
-        {user ? (
-          <button
-            type="button"
-            onClick={onOpenProfile}
-            className={`nav-pill-premium flex h-9 items-center gap-2 rounded-full border px-3 font-sans text-[12px] font-semibold cursor-pointer transition-all ${
-              isProfilePage
-                ? 'nav-pill-active border-deep-teal bg-deep-teal text-white'
-                : 'border-deep-teal/20 bg-paper-white text-charcoal-navy hover:border-deep-teal/40 hover:bg-sea-foam/70 hover:text-deep-teal'
-            }`}
-            aria-current={isProfilePage ? 'page' : undefined}
-            title="Clinician Profile & Settings"
-          >
-            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-mono font-bold ${
-              isProfilePage ? 'bg-white text-deep-teal' : 'bg-deep-teal text-white'
-            }`}>
+        {/* Guest Clinician / Showcase Profile Pill */}
+        <button
+          type="button"
+          onClick={onOpenProfile}
+          className={`nav-pill-premium flex h-9 items-center gap-2 rounded-full border px-3 font-sans text-[12px] font-semibold cursor-pointer transition-all ${
+            isProfilePage
+              ? 'nav-pill-active border-deep-teal bg-deep-teal text-white'
+              : 'border-deep-teal/20 bg-paper-white text-charcoal-navy hover:border-deep-teal/40 hover:bg-sea-foam/70 hover:text-deep-teal'
+          }`}
+          aria-current={isProfilePage ? 'page' : undefined}
+          title="Clinician Profile & Session Settings"
+        >
+          <span className="relative flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-mono font-bold shrink-0">
+            <span
+              className={`flex h-5 w-5 items-center justify-center rounded-full ${
+                isProfilePage ? 'bg-white text-deep-teal' : 'bg-deep-teal text-white'
+              }`}
+            >
               {userInitials}
             </span>
-            <span className="truncate max-w-[100px] sm:max-w-[140px]">{user.name}</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onOpenSignIn}
-            className={`nav-pill-premium flex h-9 items-center gap-1.5 rounded-full border px-3.5 font-sans text-[12px] font-semibold cursor-pointer transition-all ${
-              isSignInPage
-                ? 'nav-pill-active border-deep-teal bg-deep-teal text-white'
-                : 'border-deep-teal/25 bg-sea-foam text-deep-teal hover:border-deep-teal hover:bg-deep-teal hover:text-white'
-            }`}
-            aria-current={isSignInPage ? 'page' : undefined}
-            title="Clinician Sign In"
-          >
-            <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Sign In</span>
-          </button>
-        )}
+            <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-white" />
+          </span>
+          <span className="truncate max-w-[110px] sm:max-w-[150px]">{user?.name || 'Guest Investigator'}</span>
+        </button>
       </div>
     </nav>
   );

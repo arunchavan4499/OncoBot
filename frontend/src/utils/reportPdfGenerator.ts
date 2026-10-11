@@ -9,6 +9,8 @@ export interface PdfReportOptions {
   cancerType?: string;
   topPathways?: { name: string; weight: number; description?: string }[];
   attentionSummary?: string;
+  heatmapImageUrl?: string | null;
+  wsiHotspots?: Array<{ weight: number; tissue: string }>;
 }
 
 interface ParsedSection {
@@ -100,8 +102,8 @@ function parseReportMarkdown(rawText: string): ParsedSection[] {
     if (p3) {
       sections.push({
         number: '3',
-        title: 'ACTIONABLE CLINICAL RECOMMENDATIONS & SURVEILLANCE',
-        icon: '💊',
+        title: 'WHOLE-SLIDE HISTOPATHOLOGY CORRELATES',
+        icon: '🔬',
         contentHtml: formatSectionContent(p3),
       });
     }
@@ -125,8 +127,8 @@ function formatSectionContent(text: string): string {
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       const itemText = formatInlineMarkdown(trimmed.substring(2));
       result.push(`
-        <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 11px; line-height: 1.5; color: #283338;">
-          <span style="color: #1c5d5f; font-weight: bold; font-size: 12px; line-height: 1.4;">•</span>
+        <div style="display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; font-size: 10px; line-height: 1.4; color: #283338;">
+          <span style="color: #1c5d5f; font-weight: bold; font-size: 11px; line-height: 1.3;">•</span>
           <div>${itemText}</div>
         </div>
       `);
@@ -147,7 +149,7 @@ function formatSectionContent(text: string): string {
       else if (itemText.toLowerCase().includes('tumor board') || itemText.toLowerCase().includes('multidisciplinary')) badgeEmoji = '👥';
 
       result.push(`
-        <div style="background: #f7faf9; border-left: 3px solid #1c5d5f; padding: 6px 10px; border-radius: 4px; margin-bottom: 6px; font-size: 11px; line-height: 1.5; color: #283338;">
+        <div style="background: #f7faf9; border-left: 3px solid #1c5d5f; padding: 5px 8px; border-radius: 4px; margin-bottom: 5px; font-size: 10.5px; line-height: 1.45; color: #283338;">
           <span style="font-weight: 700; color: #1c5d5f; margin-right: 4px;">${badgeEmoji} ${num}.</span>
           ${itemText}
         </div>
@@ -157,7 +159,7 @@ function formatSectionContent(text: string): string {
 
     // Regular paragraph
     result.push(`
-      <p style="margin: 0 0 7px 0; font-size: 11px; line-height: 1.55; color: #283338; text-align: justify;">
+      <p style="margin: 0 0 5px 0; font-size: 10.5px; line-height: 1.45; color: #283338; text-align: justify;">
         ${formatInlineMarkdown(trimmed)}
       </p>
     `);
@@ -201,83 +203,119 @@ function buildPageOneHtml(options: PdfReportOptions, sections: ParsedSection[], 
   // Page 1 gets Section 1, 2, and 3
   const p1Sections = sections.filter(s => ['1', '2', '3'].includes(s.number));
   // If parsing didn't produce numbered sections, take first 2-3
-  const displaySections = p1Sections.length > 0 ? p1Sections : sections.slice(0, 2);
+  const displaySections = p1Sections.length > 0 ? p1Sections : sections.slice(0, 3);
 
-  const sectionsHtml = displaySections.map(sec => `
-    <div style="margin-bottom: 12px; background: #ffffff; border: 1px solid #d8e5e5; border-radius: 8px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; border-bottom: 1px solid #eef4f4; padding-bottom: 4px;">
-        <span style="font-size: 14px;">${sec.icon}</span>
-        <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11.5px; font-weight: 700; color: #1c5d5f; letter-spacing: 0.3px; text-transform: uppercase;">
-          Section ${sec.number}: ${sec.title}
-        </span>
+  const sectionsHtml = displaySections.map((sec, idx) => {
+    const isSectionThree = sec.number === '3' || sec.title.toLowerCase().includes('histopath') || (!displaySections.some(s => s.number === '3') && idx === displaySections.length - 1);
+
+    if (isSectionThree && options.heatmapImageUrl) {
+      return `
+        <div style="margin-bottom: 8px; background: #ffffff; border: 1px solid #d8e5e5; border-radius: 6px; padding: 7px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+          <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px; border-bottom: 1px solid #eef4f4; padding-bottom: 3px;">
+            <span style="font-size: 13px;">${sec.icon}</span>
+            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10.5px; font-weight: 700; color: #1c5d5f; letter-spacing: 0.3px; text-transform: uppercase;">
+              Section ${sec.number}: ${sec.title}
+            </span>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 10px; align-items: start;">
+            <div>
+              ${sec.contentHtml}
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <img src="${options.heatmapImageUrl}" alt="WSI Attention Heatmap" style="width: 100%; max-height: 165px; object-fit: contain; border-radius: 4px; border: 1px solid #cbd5e1; display: block;" />
+              <div style="width: 100%; margin-top: 4px;">
+                <div style="height: 5px; width: 100%; border-radius: 2px; background: linear-gradient(90deg, #2a6e70 0%, #dd8b2a 50%, #d63353 100%);"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 6.5px; color: #64748b; margin-top: 1px; font-weight: 600;">
+                  <span>0.0 (Stroma)</span>
+                  <span>0.5</span>
+                  <span>1.0 (Tumor Peak)</span>
+                </div>
+              </div>
+              <div style="font-size: 6.5px; color: #475569; line-height: 1.25; margin-top: 3px; text-align: center; font-style: italic;">
+                Figure 1: DINO ViT-S/16 Cross-Attention Gigapixel Heatmap. Warm regions denote high spatial co-localization with genomic oncogenic drivers.
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div style="margin-bottom: 8px; background: #ffffff; border: 1px solid #d8e5e5; border-radius: 6px; padding: 7px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px; border-bottom: 1px solid #eef4f4; padding-bottom: 3px;">
+          <span style="font-size: 13px;">${sec.icon}</span>
+          <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10.5px; font-weight: 700; color: #1c5d5f; letter-spacing: 0.3px; text-transform: uppercase;">
+            Section ${sec.number}: ${sec.title}
+          </span>
+        </div>
+        <div>
+          ${sec.contentHtml}
+        </div>
       </div>
-      <div>
-        ${sec.contentHtml}
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
   return `
-    <div class="pdf-render-page" style="width: 794px; height: 1123px; padding: 36px 44px; box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; position: relative; color: #283338;">
+    <div class="pdf-render-page" style="width: 794px; height: 1123px; padding: 26px 36px; box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; position: relative; color: #283338;">
       <div>
         <!-- TOP BRANDING & LETTERHEAD -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1c5d5f; padding-bottom: 12px; margin-bottom: 14px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #1c5d5f, #0e4749); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(28,93,95,0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1c5d5f; padding-bottom: 8px; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: linear-gradient(135deg, #1c5d5f, #0e4749); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 3px 8px rgba(28,93,95,0.25);">
               🧬
             </div>
             <div>
-              <div style="font-size: 18px; font-weight: 800; color: #1c5d5f; letter-spacing: 0.5px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                ONCO_BOT <span style="font-weight: 400; font-size: 14px; color: #0e4749;">| MEDICAL AI REPORT</span>
+              <div style="font-size: 17px; font-weight: 800; color: #1c5d5f; letter-spacing: 0.5px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                ONCO_BOT <span style="font-weight: 400; font-size: 13px; color: #0e4749;">| MEDICAL AI REPORT</span>
               </div>
-              <div style="font-size: 10px; font-weight: 600; color: #64748b; letter-spacing: 0.8px; text-transform: uppercase;">
+              <div style="font-size: 9.5px; font-weight: 600; color: #64748b; letter-spacing: 0.8px; text-transform: uppercase;">
                 Pathway-Aware Multimodal Transformer (PAMT) Clinical Decision Support
               </div>
             </div>
           </div>
 
           <div style="text-align: right;">
-            <div style="display: inline-block; background: #edf7f4; border: 1px solid #cae1e2; padding: 3px 8px; border-radius: 4px; font-size: 9.5px; font-weight: 700; color: #1c5d5f; letter-spacing: 0.5px;">
+            <div style="display: inline-block; background: #edf7f4; border: 1px solid #cae1e2; padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 700; color: #1c5d5f; letter-spacing: 0.5px;">
               🔒 CONFIDENTIAL MEDICAL RECORD
             </div>
-            <div style="font-size: 9.5px; color: #64748b; margin-top: 3px; font-family: monospace;">
+            <div style="font-size: 9px; color: #64748b; margin-top: 2px; font-family: monospace;">
               REPORT ID: OB-${patientId.replace(/[^A-Za-z0-9]/g, '')}
             </div>
-            <div style="font-size: 9px; color: #94a3b8;">
+            <div style="font-size: 8.5px; color: #94a3b8;">
               DATE: ${formattedDate}
             </div>
           </div>
         </div>
 
         <!-- PATIENT METRICS DOSSIER GRID -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;">
-          <div style="background: #f7faf9; border: 1px solid #e2ebea; border-radius: 6px; padding: 7px 10px;">
-            <div style="font-size: 8.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">🆔 Patient Identifier</div>
-            <div style="font-size: 12px; font-weight: 800; color: #1c5d5f; margin-top: 2px;">${patientId}</div>
-            <div style="font-size: 8px; color: #94a3b8;">Primary Cohort Subject</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px;">
+          <div style="background: #f7faf9; border: 1px solid #e2ebea; border-radius: 5px; padding: 5px 8px;">
+            <div style="font-size: 8px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">🆔 Patient Identifier</div>
+            <div style="font-size: 11.5px; font-weight: 800; color: #1c5d5f; margin-top: 1px;">${patientId}</div>
+            <div style="font-size: 7.5px; color: #94a3b8;">Primary Cohort Subject</div>
           </div>
 
-          <div style="background: #f7faf9; border: 1px solid #e2ebea; border-radius: 6px; padding: 7px 10px;">
-            <div style="font-size: 8.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Hazard Score (Cox-PH)</div>
-            <div style="font-size: 12px; font-weight: 800; color: #0e4749; margin-top: 2px;">${scoreVal.toFixed(4)}</div>
-            <div style="font-size: 8px; color: #94a3b8;">Multimodal Fusion Head</div>
+          <div style="background: #f7faf9; border: 1px solid #e2ebea; border-radius: 5px; padding: 5px 8px;">
+            <div style="font-size: 8px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Hazard Score (Cox-PH)</div>
+            <div style="font-size: 11.5px; font-weight: 800; color: #0e4749; margin-top: 1px;">${scoreVal.toFixed(4)}</div>
+            <div style="font-size: 7.5px; color: #94a3b8;">Multimodal Fusion Head</div>
           </div>
 
-          <div style="background: ${riskBadgeBg}; border: 1px solid ${riskColor}30; border-radius: 6px; padding: 7px 10px;">
-            <div style="font-size: 8.5px; font-weight: 700; color: ${riskColor}; text-transform: uppercase; letter-spacing: 0.5px;">📊 Cohort Stratification</div>
-            <div style="font-size: 11.5px; font-weight: 800; color: ${riskColor}; margin-top: 2px;">${riskTier}</div>
-            <div style="font-size: 8px; color: ${riskColor}aa;">TCGA-BLCA Benchmark</div>
+          <div style="background: ${riskBadgeBg}; border: 1px solid ${riskColor}30; border-radius: 5px; padding: 5px 8px;">
+            <div style="font-size: 8px; font-weight: 700; color: ${riskColor}; text-transform: uppercase; letter-spacing: 0.5px;">📊 Cohort Stratification</div>
+            <div style="font-size: 11px; font-weight: 800; color: ${riskColor}; margin-top: 1px;">${riskTier}</div>
+            <div style="font-size: 7.5px; color: ${riskColor}aa;">TCGA-BLCA Benchmark</div>
           </div>
 
-          <div style="background: #f7faf9; border: 1px solid #e2ebea; border-radius: 6px; padding: 7px 10px;">
-            <div style="font-size: 8.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">🤖 AI Synthesis Engine</div>
-            <div style="font-size: 10.5px; font-weight: 700; color: #1c5d5f; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${modelTag}</div>
-            <div style="font-size: 8px; color: #94a3b8;">Hugging Face Serverless</div>
+          <div style="background: #f7faf9; border: 1px solid #e2ebea; border-radius: 5px; padding: 5px 8px;">
+            <div style="font-size: 8px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">🤖 AI Synthesis Engine</div>
+            <div style="font-size: 10px; font-weight: 700; color: #1c5d5f; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${modelTag}</div>
+            <div style="font-size: 7.5px; color: #94a3b8;">Hugging Face Serverless</div>
           </div>
         </div>
 
         <!-- TUMOR SPECIFICATION SUB-BAR -->
-        <div style="display: flex; align-items: center; justify-content: space-between; background: #edf7f4; border: 1px solid #d2e7e3; border-radius: 6px; padding: 6px 12px; margin-bottom: 12px; font-size: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #edf7f4; border: 1px solid #d2e7e3; border-radius: 5px; padding: 4px 10px; margin-bottom: 10px; font-size: 9.5px;">
           <div>
             <span style="font-weight: 700; color: #1c5d5f;">🎯 Primary Indication:</span>
             <span style="color: #283338; margin-left: 4px;">${cancerType}</span>

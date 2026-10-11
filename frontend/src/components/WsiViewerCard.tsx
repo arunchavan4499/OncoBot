@@ -713,7 +713,14 @@ export const WsiViewerCard: React.FC<WsiViewerCardProps> = ({
               <h3 className="font-sans text-[13px] font-bold text-charcoal-navy tracking-tight">
                 Selected Tile Analysis
               </h3>
-              <ExternalLink className="w-3.5 h-3.5 text-charcoal-navy/50 hover:text-deep-teal cursor-pointer" />
+              <button
+                type="button"
+                onClick={() => window.open(currentPatchImage, '_blank')}
+                title="Open full-resolution 40x micrograph in new tab"
+                className="bg-transparent border-none p-0 cursor-pointer text-charcoal-navy/50 hover:text-deep-teal transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
             </div>
 
             {/* Real 40x Microscopic Cancer Micrograph Preview */}
